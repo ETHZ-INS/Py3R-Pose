@@ -24,4 +24,5 @@ dependencies = [
 ]
 
 [tool.setuptools.packages.find]
+where = ["src/"]
 include = ["py3r.point_tracking.core"]
