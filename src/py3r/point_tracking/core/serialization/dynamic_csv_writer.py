@@ -10,7 +10,7 @@ from py3r.point_tracking.core.serialization.static_csv_writer import StaticCSVWr
 class DynamicCSVWriter:
     def __init__(self, file_path: Path | str, keep_temp_file: bool = False):
         self.file_path = Path(file_path)
-        self.temp_file_path = self.file_path.with_suffix(".json")
+        self.temp_file_path = self.file_path.with_suffix(".jsonl")
         self.keep_temp_file = keep_temp_file
 
         self.json_writer = JSONWriter(self.temp_file_path)
