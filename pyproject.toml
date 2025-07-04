@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "py3r_point_tracking_core"
-version = "0.1.1"
+version = "0.1.2"
 authors = [
   { name="Marcel Schmutz", email="mschmut@ethz.ch" },
 ]
-description = "A small example package"
+description = "Lightweight core library for pose estimation and pose analysis in the ETH Zurich 3R Hub"
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
