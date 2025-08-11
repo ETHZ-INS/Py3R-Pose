@@ -7,7 +7,7 @@ from py3r.point_tracking.core.data.point import Point
 from py3r.point_tracking.core.filtering.label_filter import LabelFilter
 
 
-class MeanFilter(LabelFilter):
+class MedianFilter(LabelFilter):
     def __init__(self, instance_whitelist: List[str] = None, replace_missing: bool = True):
         self.instance_whitelist = instance_whitelist
         self.replace_missing = replace_missing
@@ -47,24 +47,24 @@ class MeanFilter(LabelFilter):
             confs = np.array(confs)
             poses = np.array(poses)
 
-            mean_box = np.nanmean(boxes, axis=0)
-            mean_conf = np.nanmean(confs)
-            mean_points = np.nanmean(poses, axis=0)
+            median_box = np.nanmedian(boxes, axis=0)
+            median_conf = float(np.nanmedian(confs))
+            median_points = np.nanmedian(poses, axis=0)
 
-            mean_box = (float(mean_box[0]), float(mean_box[1]), float(mean_box[2]), float(mean_box[3]))
-            mean_points = [(float(mean_points[i][0]), float(mean_points[i][1]), float(mean_points[i][2])) for i in range(len(mean_points))]
-            mean_points = [Point(mean_points[i][0], mean_points[i][1], mean_points[i][2]) for i in range(len(mean_points))]
+            median_box = (float(median_box[0]), float(median_box[1]), float(median_box[2]), float(median_box[3]))
+            median_points = [(float(median_points[i][0]), float(median_points[i][1]), float(median_points[i][2])) for i in range(len(median_points))]
+            median_points = [Point(median_points[i][0], median_points[i][1], median_points[i][2]) for i in range(len(median_points))]
 
             for frame in frames:
                 found = False
                 for instance in frame:
                     if instance.type.name != instance_type.name or instance.id != instance_id:
                         continue
-                    instance.box = mean_box
-                    instance.points = mean_points
-                    instance.conf = mean_conf
+                    instance.box = median_box
+                    instance.points = median_points
+                    instance.conf = median_conf
                     found = True
                 if not found and self.replace_missing:
-                    frame.append(Instance(instance_id, instance_type, mean_box, mean_points, mean_conf))
+                    frame.append(Instance(instance_id, instance_type, median_box, median_points, median_conf))
 
         return frames
