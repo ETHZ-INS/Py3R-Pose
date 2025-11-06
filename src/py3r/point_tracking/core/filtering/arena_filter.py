@@ -1,16 +1,18 @@
-from typing import List
+from typing import List, Callable
 
+from py3r.point_tracking.core.types import PoseInstanceType
 from py3r.point_tracking.core.types.instance import PoseInstance
-from py3r.point_tracking.core.filtering.label_filter import LabelFilter
+from py3r.point_tracking.core.filtering.pose_filter import PoseFilter
 
 
-class ArenaFilter(LabelFilter):
-    def __init__(self, arena_type_name: str, min_intersection: float = 0.1):
+class ArenaPoseFilter(PoseFilter):
+    def __init__(self, arena_type_filter: Callable[[PoseInstanceType], bool], min_intersection: float = 0.1):
         # Filter out instances that don't overlap with at least one arena instance
+        # Used to filter out instances outside the arena, which are probably false positives
         # arena_type_name: Name of the arena type
         # min_intersection: Minimum intersection required (as fraction of instance box area)
 
-        self.arena_type_name = arena_type_name
+        self.arena_type_filter = arena_type_filter
         self.min_intersection = min_intersection
 
     def _bounding_box_overlap(self, instance_box, arena_box):
@@ -38,10 +40,10 @@ class ArenaFilter(LabelFilter):
 
         return False
 
-    def filter(self, instances: List[PoseInstance]) -> List[PoseInstance]:
+    def _filter(self, instances: List[PoseInstance]) -> List[PoseInstance]:
         arena_instances = [
             instance for instance in instances
-            if instance.type.name == self.arena_type_name
+            if self.arena_type_filter(instance.type)
         ]
 
         # Filter out instances that don't overlap with at least one arena instance

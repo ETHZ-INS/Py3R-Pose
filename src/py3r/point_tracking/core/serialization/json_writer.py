@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from typing import List
 
-from py3r.point_tracking.core.types import VideoFramePoseResults
+from py3r.point_tracking.core.types import VideoFramePoses
 
 
 class JSONWriter:
@@ -11,14 +11,14 @@ class JSONWriter:
         self.file = self.file_path.open("w+")
         self.file.write("[\n")
 
-    def write(self, pose_results: VideoFramePoseResults):
+    def write(self, pose_results: VideoFramePoses):
         instance_dicts = [instance.as_dict() for instance in pose_results.instances]
 
         frame_data = {"frame_index": pose_results.frame_index, "frame_size": pose_results.size, "instances": instance_dicts}
         frame_json = json.dumps(frame_data)
         self.file.write(frame_json + ",\n")
 
-    def write_all(self, data: List[VideoFramePoseResults]):
+    def write_all(self, data: List[VideoFramePoses]):
         for frame in data:
             self.write(frame)
 
@@ -37,7 +37,7 @@ class JSONWriter:
         self.close()
 
     @staticmethod
-    def write_json(file_path: Path | str, data: List[VideoFramePoseResults]):
+    def write_json(file_path: Path | str, data: List[VideoFramePoses]):
         frame_dicts = [
             {"frame_index": frame_index, "instances": [instance.as_dict() for instance in instances]}
             for frame_index, instances in data

@@ -9,7 +9,7 @@ from py3r.point_tracking.core.serialization.dynamic_csv_writer import DynamicCSV
 from reactivex import Observer, Observable
 from reactivex.scheduler import ThreadPoolScheduler
 
-from py3r.point_tracking.core.types import VideoFramePoseResults
+from py3r.point_tracking.core.types import VideoFramePoses
 
 
 class PoseResultsFileObserver(Observer):
@@ -58,7 +58,7 @@ class PoseResultsFileObserver(Observer):
         self._succeed()
 
     # ---------- Wiring ----------
-    def attach(self, upstream: Observable[VideoFramePoseResults]) -> DisposableBase:
+    def attach(self, upstream: Observable[VideoFramePoses]) -> DisposableBase:
         """
         Subscribe to an Observable and remember the disposable.
         All callbacks are delivered on `self._worker` (serialized).

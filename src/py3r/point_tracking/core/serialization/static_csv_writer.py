@@ -2,7 +2,7 @@ import csv
 from pathlib import Path
 from typing import List, Tuple
 
-from py3r.point_tracking.core.types import VideoFramePoseResults
+from py3r.point_tracking.core.types import VideoFramePoses
 
 
 # TODO: rethink all this
@@ -49,7 +49,7 @@ class StaticCSVWriter:
             row.append(value)
         self.csv_writer.writerow(row)
 
-    def write(self, pose_results: VideoFramePoseResults):
+    def write(self, pose_results: VideoFramePoses):
         instance_dicts = [instance.as_dict() for instance in pose_results.instances]
         self.write_dicts(pose_results.frame_index, pose_results.size, instance_dicts)
 

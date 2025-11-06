@@ -4,7 +4,7 @@ import numpy as np
 import reactivex as rx
 import reactivex.operators as ops
 
-from py3r.point_tracking.core.types import PoseResults, HasImage
+from py3r.point_tracking.core.types import Poses, HasImage
 from py3r.point_tracking.core.model.pose_model import PoseModel
 
 
@@ -25,11 +25,10 @@ class PoseEstimationTransform:
         results = poses
         return results
 
-    def __call__(self, upstream: rx.Observable[HasImage | np.ndarray]) -> rx.Observable[PoseResults]:
+    def __call__(self, upstream: rx.Observable[HasImage | np.ndarray]) -> rx.Observable[Poses]:
         return upstream.pipe(
             ops.map(lambda x: x if isinstance(x, np.ndarray) else x.img),
             ops.buffer_with_count(self.batch_size),
             ops.map(self._predict_batch),
-            ops.flat_map(lambda x: rx.from_iterable(x)),
-            ops.map(lambda x: PoseResults(x))
+            ops.flat_map(lambda x: rx.from_iterable(x))
         )

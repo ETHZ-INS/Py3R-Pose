@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
-from collections.abc import Iterable
-from typing import List, Any
+from typing import List, Any, Sequence
 
+import numpy as np
+
+from py3r.point_tracking.core.types import HasImage, Poses
 from py3r.point_tracking.core.types.instance import PoseInstance
 from py3r.point_tracking.core.types.instance_type import PoseInstanceType
 
@@ -11,7 +13,7 @@ class PoseModel(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def predict(self, img: Any) -> List[PoseInstance]:
+    def _predict(self, img: np.ndarray | Any) -> List[PoseInstance]:
         """
         Predict poses for a single image.
         :param img: Input image (e.g., numpy array or tensor)
@@ -19,13 +21,31 @@ class PoseModel(ABC):
         """
         raise NotImplementedError
 
-    def predict_batch(self, batch: Iterable[Any]) -> List[List[PoseInstance]]:
+    def _predict_batch(self, batch: Sequence[np.ndarray] | Any) -> List[List[PoseInstance]]:
         """
         Predict poses for a batch of images.
         :param batch: List of input images (e.g., numpy arrays or tensors).
         May accept batched numpy arrays/tensors depending on implementation.
         :return: List of Instance objects for each image in the batch
         """
-        if not isinstance(batch, Iterable):
-            raise ValueError("Batch must be an iterable of images")
-        return [self.predict(img) for img in batch]
+        if not isinstance(batch, Sequence):
+            raise ValueError("For default batch prediction, input must be a sequence of images.")
+        return [self._predict(img) for img in batch]
+
+    def predict(self, img: Any) -> Poses:
+        if isinstance(img, HasImage):
+            img = img.img
+        return Poses(self._predict(img))
+
+    def predict_batch(self, batch: Sequence[HasImage] | Any) -> List[Poses]:
+        if isinstance(batch, Sequence):
+            if len(batch) == 0:
+                return []
+            elif isinstance(batch[0], HasImage):
+                imgs = [item.img for item in batch]
+                instance_lists = self._predict_batch(imgs)
+            else:
+                instance_lists = self._predict_batch(batch)
+        else:
+            instance_lists = self._predict_batch(batch)
+        return [Poses(instances) for instances in instance_lists]

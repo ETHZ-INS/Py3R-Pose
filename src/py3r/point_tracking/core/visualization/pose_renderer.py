@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 import colorsys
 
-from py3r.point_tracking.core.types import HasImage
+from py3r.point_tracking.core.types import HasImage, HasPoses
 from py3r.point_tracking.core.types.instance import PoseInstance
 from py3r.point_tracking.core.types.instance_type import PoseInstanceType
 from py3r.point_tracking.core.types.point import PosePoint
@@ -176,8 +176,9 @@ class PoseRenderer:
 
         return cv2.putText(frame, instance_text, text_p, self.class_name_font, self.class_name_scale, self.class_name_color, self.class_name_thickness)
 
-    def render(self, img: HasImage | np.ndarray, instances: List[PoseInstance]) -> np.ndarray:
+    def render(self, img: HasImage | np.ndarray, poses: HasPoses | List[PoseInstance]) -> np.ndarray:
         img = img if isinstance(img, np.ndarray) else img.img
+        instances = poses if isinstance(poses, list) else poses.instances
 
         if img.ndim == 3 and img.shape[2] == 1:
             img = img[:, :, 0]
