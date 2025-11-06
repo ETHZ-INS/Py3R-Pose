@@ -9,6 +9,7 @@ from py3r.point_tracking.core.types.instance_type import PoseInstanceType
 
 
 class PoseModel(ABC):
+    @abstractmethod
     def get_instance_types(self) -> List[PoseInstanceType]:
         raise NotImplementedError
 
