@@ -2,10 +2,10 @@ import csv
 from pathlib import Path
 from typing import Tuple, List
 
-from py3r.point_tracking.core.types import VideoFramePoseResults
-from py3r.point_tracking.core.types.instance_type import PoseInstanceType
-from py3r.point_tracking.core.types.instance import PoseInstance
-from py3r.point_tracking.core.types.point import PosePoint
+from py3r.pose.core.types import VideoFramePoses
+from py3r.pose.core.types.instance_type import PoseInstanceType
+from py3r.pose.core.types.instance import PoseInstance
+from py3r.pose.core.types.point import PosePoint
 
 
 class CSVReader:
@@ -108,7 +108,7 @@ class CSVReader:
             conf=box_conf
         )
 
-    def read(self) -> VideoFramePoseResults | None:
+    def read(self) -> VideoFramePoses | None:
         instance_dicts = {}
 
         try:
@@ -178,9 +178,9 @@ class CSVReader:
 
         instances = [self._parse_instance(instance_dict) for instance_dict in instance_dicts]
 
-        return VideoFramePoseResults(instances, (frame_width, frame_height), frame_index, 0.0)
+        return VideoFramePoses(instances, (frame_width, frame_height), frame_index, 0.0)
 
-    def read_all(self) -> List[VideoFramePoseResults]:
+    def read_all(self) -> List[VideoFramePoses]:
         frames = []
         while True:
             frame = self.read()
@@ -203,6 +203,6 @@ class CSVReader:
         self.close()
 
     @staticmethod
-    def read_csv(file_path: Path | str) -> List[VideoFramePoseResults]:
+    def read_csv(file_path: Path | str) -> List[VideoFramePoses]:
         with CSVReader(file_path) as reader:
             return reader.read_all()

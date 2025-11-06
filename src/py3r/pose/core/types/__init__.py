@@ -3,7 +3,9 @@ from typing import List, Tuple, runtime_checkable, Protocol
 
 import numpy as np
 
-from py3r.point_tracking.core.types.instance import PoseInstance
+from py3r.pose.core.types.instance_type import PoseInstanceType
+from py3r.pose.core.types.instance import PoseInstance
+from py3r.pose.core.types.point import PosePoint
 
 
 @runtime_checkable
@@ -28,7 +30,7 @@ class HasFrameMeta(HasImageMeta, Protocol):
     def timestamp(self) -> float: ...
 
 @runtime_checkable
-class HasPoseResults(Protocol):
+class HasPoses(Protocol):
     @property
     def instances(self) -> List[PoseInstance]: ...
 
@@ -116,7 +118,7 @@ class VideoFrame(HasImage, HasFrameMeta):  # inherits only from Image concretely
         return self._timestamp
 
 @dataclass(frozen=True, slots=True)
-class PoseResults(HasPoseResults):
+class Poses(HasPoses):
     _instances: List[PoseInstance] = field(default_factory=list)
 
     @property
@@ -124,28 +126,28 @@ class PoseResults(HasPoseResults):
         return self._instances
 
 @dataclass(frozen=True, slots=True)
-class ImagePoseResults(HasPoseResults, HasImageMeta):
+class ImagePoses(HasPoses, HasImageMeta):
     _instances: List[PoseInstance] = field(default_factory=list)
     _size: Tuple[int, int] = field(default_factory=lambda: (0, 0))
 
     @classmethod
-    def from_parts(cls, pose_results: HasPoseResults, meta: HasImageMeta) -> "ImagePoseResults":
+    def from_parts(cls, pose_results: HasPoses, meta: HasImageMeta) -> "ImagePoses":
         return cls(
             _instances=pose_results.instances,
             _size=meta.size,
         )
 
     @classmethod
-    def from_pair(cls, pair: Tuple[HasPoseResults, HasImageMeta]) -> "ImagePoseResults":
+    def from_pair(cls, pair: Tuple[HasPoses, HasImageMeta]) -> "ImagePoses":
         return cls.from_parts(*pair)
 
-    def with_meta(self, meta: HasImageMeta) -> "ImagePoseResults":
+    def with_meta(self, meta: HasImageMeta) -> "ImagePoses":
         return replace(
             self,
             _size=meta.size,
         )
 
-    def with_pose_results(self, pose_results: HasPoseResults) -> "ImagePoseResults":
+    def with_pose_results(self, pose_results: HasPoses) -> "ImagePoses":
         return replace(
             self,
             _instances=pose_results.instances,
@@ -160,26 +162,26 @@ class ImagePoseResults(HasPoseResults, HasImageMeta):
         return self._instances
 
 @dataclass(frozen=True, slots=True)
-class VideoFramePoseResults(HasPoseResults, HasFrameMeta):
+class VideoFramePoses(HasPoses, HasFrameMeta):
     _instances: List[PoseInstance] = field(default_factory=list)
     _size: Tuple[int, int] = field(default_factory=lambda: (0, 0))
     _frame_index: int = 0
     _timestamp: float = 0.0
 
     @classmethod
-    def from_parts(cls, pose_results: HasPoseResults, meta: HasFrameMeta) -> "VideoFramePoseResults":
+    def from_parts(cls, poses: HasPoses, meta: HasFrameMeta) -> "VideoFramePoses":
         return cls(
-            _instances=pose_results.instances,
+            _instances=poses.instances,
             _size=meta.size,
             _frame_index=meta.frame_index,
             _timestamp=meta.timestamp,
         )
 
     @classmethod
-    def from_pair(cls, pair: Tuple[HasPoseResults, HasFrameMeta]) -> "VideoFramePoseResults":
+    def from_pair(cls, pair: Tuple[HasPoses, HasFrameMeta]) -> "VideoFramePoses":
         return cls.from_parts(*pair)
 
-    def with_meta(self, meta: HasFrameMeta) -> "VideoFramePoseResults":
+    def with_meta(self, meta: HasFrameMeta) -> "VideoFramePoses":
         return replace(
             self,
             _size=meta.size,
@@ -187,7 +189,7 @@ class VideoFramePoseResults(HasPoseResults, HasFrameMeta):
             _timestamp=meta.timestamp,
         )
 
-    def with_pose_results(self, pose_results: HasPoseResults) -> "VideoFramePoseResults":
+    def with_pose_results(self, pose_results: HasPoses) -> "VideoFramePoses":
         return replace(
             self,
             _instances=pose_results.instances,

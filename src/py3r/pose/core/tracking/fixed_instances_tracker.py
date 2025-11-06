@@ -1,9 +1,9 @@
 import itertools
 from typing import List
 
-from py3r.point_tracking.core.types.instance_type import PoseInstanceType
-from py3r.point_tracking.core.types.instance import PoseInstance
-from py3r.point_tracking.core.filtering.label_filter import LabelFilter
+from py3r.pose.core.types.instance_type import PoseInstanceType
+from py3r.pose.core.types.instance import PoseInstance
+from py3r.pose.core.filtering.pose_filter import PoseFilter
 
 
 class Track:
@@ -42,7 +42,7 @@ pose_dists = []
 time_dists = []
 
 
-class FixedInstancesTracker(LabelFilter):
+class FixedInstancesTracker(PoseFilter):
     """
     This tracker can be used when you know exactly how many instances of each type there are in the video.
     It has the advantage that it smartly filters out false positives by discarding instances
@@ -62,7 +62,7 @@ class FixedInstancesTracker(LabelFilter):
             track_id = instance_type + f"_{len(self.tracks[instance_type])}"
             self.tracks[instance_type].append(Track(track_id))
 
-    def filter(self, instances: List[PoseInstance]) -> List[PoseInstance]:
+    def _filter(self, instances: List[PoseInstance]) -> List[PoseInstance]:
         instances = [instance for instance in instances if any([point is not None for point in instance.points])]
         tracked_instances = []
 

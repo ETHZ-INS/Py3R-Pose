@@ -2,9 +2,9 @@ import json
 from pathlib import Path
 from typing import List
 
-from py3r.point_tracking.core.types import VideoFramePoseResults
-from py3r.point_tracking.core.serialization.json_writer import JSONWriter
-from py3r.point_tracking.core.serialization.static_csv_writer import StaticCSVWriter
+from py3r.pose.core.types import VideoFramePoses
+from py3r.pose.core.serialization.json_writer import JSONWriter
+from py3r.pose.core.serialization.static_csv_writer import StaticCSVWriter
 
 
 class DynamicCSVWriter:
@@ -16,10 +16,10 @@ class DynamicCSVWriter:
         self.json_writer = JSONWriter(self.temp_file_path)
         self.closed = False
 
-    def write(self, frame: VideoFramePoseResults):
+    def write(self, frame: VideoFramePoses):
         self.json_writer.write(frame)
 
-    def write_all(self, data: List[VideoFramePoseResults]):
+    def write_all(self, data: List[VideoFramePoses]):
         for frame in data:
             self.write(frame)
 
@@ -70,6 +70,6 @@ class DynamicCSVWriter:
         self.close()
 
     @staticmethod
-    def write_csv(file_path: Path | str, data: List[VideoFramePoseResults]):
+    def write_csv(file_path: Path | str, data: List[VideoFramePoses]):
         with DynamicCSVWriter(file_path) as writer:
             writer.write_all(data)
