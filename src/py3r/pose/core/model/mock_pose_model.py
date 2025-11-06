@@ -1,7 +1,7 @@
 from typing import List, Any
 
-from py3r.point_tracking.core.model.pose_model import PoseModel
-from py3r.point_tracking.core.types import PoseInstance, PoseInstanceType
+from py3r.pose.core.model.pose_model import PoseModel
+from py3r.pose.core.types import PoseInstance, PoseInstanceType
 
 
 class MockPoseModel(PoseModel):

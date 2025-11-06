@@ -3,9 +3,9 @@ from typing import List, Tuple, runtime_checkable, Protocol
 
 import numpy as np
 
-from py3r.point_tracking.core.types.instance_type import PoseInstanceType
-from py3r.point_tracking.core.types.instance import PoseInstance
-from py3r.point_tracking.core.types.point import PosePoint
+from py3r.pose.core.types.instance_type import PoseInstanceType
+from py3r.pose.core.types.instance import PoseInstance
+from py3r.pose.core.types.point import PosePoint
 
 
 @runtime_checkable

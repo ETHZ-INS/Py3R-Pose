@@ -5,10 +5,10 @@ import cv2
 import numpy as np
 import colorsys
 
-from py3r.point_tracking.core.types import HasImage, HasPoses
-from py3r.point_tracking.core.types.instance import PoseInstance
-from py3r.point_tracking.core.types.instance_type import PoseInstanceType
-from py3r.point_tracking.core.types.point import PosePoint
+from py3r.pose.core.types import HasImage, HasPoses
+from py3r.pose.core.types.instance import PoseInstance
+from py3r.pose.core.types.instance_type import PoseInstanceType
+from py3r.pose.core.types.point import PosePoint
 
 Color = Tuple[int, int, int] | int
 

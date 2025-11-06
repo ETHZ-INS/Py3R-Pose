@@ -2,10 +2,10 @@ import csv
 from pathlib import Path
 from typing import Tuple, List
 
-from py3r.point_tracking.core.types import VideoFramePoses
-from py3r.point_tracking.core.types.instance_type import PoseInstanceType
-from py3r.point_tracking.core.types.instance import PoseInstance
-from py3r.point_tracking.core.types.point import PosePoint
+from py3r.pose.core.types import VideoFramePoses
+from py3r.pose.core.types.instance_type import PoseInstanceType
+from py3r.pose.core.types.instance import PoseInstance
+from py3r.pose.core.types.point import PosePoint
 
 
 class CSVReader:

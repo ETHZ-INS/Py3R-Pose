@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from typing import List
 
-from py3r.point_tracking.core.types.instance_type import PoseInstanceType
-from py3r.point_tracking.core.types.point import PosePoint
+from py3r.pose.core.types.instance_type import PoseInstanceType
+from py3r.pose.core.types.point import PosePoint
 
 
 @dataclass(slots=True)

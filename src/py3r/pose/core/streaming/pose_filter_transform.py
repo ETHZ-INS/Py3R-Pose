@@ -3,8 +3,8 @@ from typing import List
 import reactivex as rx
 import reactivex.operators as ops
 
-from py3r.point_tracking.core.filtering.pose_filter import PoseFilter
-from py3r.point_tracking.core.types import Poses, HasPoses, PoseInstance
+from py3r.pose.core.filtering.pose_filter import PoseFilter
+from py3r.pose.core.types import Poses, HasPoses, PoseInstance
 
 
 class PoseFilterTransform:

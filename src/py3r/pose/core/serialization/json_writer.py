@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from typing import List
 
-from py3r.point_tracking.core.types import VideoFramePoses
+from py3r.pose.core.types import VideoFramePoses
 
 
 class JSONWriter:

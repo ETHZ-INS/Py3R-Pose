@@ -4,8 +4,8 @@ import numpy as np
 import reactivex as rx
 import reactivex.operators as ops
 
-from py3r.point_tracking.core.types import HasImage, HasPoses, Image
-from py3r.point_tracking.core.visualization.pose_renderer import PoseRenderer
+from py3r.pose.core.types import HasImage, HasPoses, Image
+from py3r.pose.core.visualization.pose_renderer import PoseRenderer
 
 
 class PoseRenderTransform:

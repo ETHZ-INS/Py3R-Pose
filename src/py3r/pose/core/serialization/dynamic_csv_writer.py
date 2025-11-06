@@ -2,9 +2,9 @@ import json
 from pathlib import Path
 from typing import List
 
-from py3r.point_tracking.core.types import VideoFramePoses
-from py3r.point_tracking.core.serialization.json_writer import JSONWriter
-from py3r.point_tracking.core.serialization.static_csv_writer import StaticCSVWriter
+from py3r.pose.core.types import VideoFramePoses
+from py3r.pose.core.serialization.json_writer import JSONWriter
+from py3r.pose.core.serialization.static_csv_writer import StaticCSVWriter
 
 
 class DynamicCSVWriter:

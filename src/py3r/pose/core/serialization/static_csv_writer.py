@@ -2,7 +2,7 @@ import csv
 from pathlib import Path
 from typing import List, Tuple
 
-from py3r.point_tracking.core.types import VideoFramePoses
+from py3r.pose.core.types import VideoFramePoses
 
 
 # TODO: rethink all this

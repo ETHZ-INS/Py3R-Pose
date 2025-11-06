@@ -1,7 +1,7 @@
 from typing import List
 
-from py3r.point_tracking.core.types.instance import PoseInstance
-from py3r.point_tracking.core.filtering.pose_filter import PoseFilter
+from py3r.pose.core.types.instance import PoseInstance
+from py3r.pose.core.filtering.pose_filter import PoseFilter
 
 
 class ConfidencePoseFilter(PoseFilter):

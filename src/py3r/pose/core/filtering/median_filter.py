@@ -3,10 +3,10 @@ from typing import List, Callable
 
 import numpy as np
 
-from py3r.point_tracking.core.types import PoseInstanceType
-from py3r.point_tracking.core.types.instance import PoseInstance
-from py3r.point_tracking.core.types.point import PosePoint
-from py3r.point_tracking.core.filtering.pose_filter import PoseFilter
+from py3r.pose.core.types import PoseInstanceType
+from py3r.pose.core.types.instance import PoseInstance
+from py3r.pose.core.types.point import PosePoint
+from py3r.pose.core.filtering.pose_filter import PoseFilter
 
 
 class MedianPoseFilter(PoseFilter):

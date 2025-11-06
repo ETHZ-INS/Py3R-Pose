@@ -3,9 +3,9 @@ from typing import List, Any, Sequence
 
 import numpy as np
 
-from py3r.point_tracking.core.types import HasImage, Poses
-from py3r.point_tracking.core.types.instance import PoseInstance
-from py3r.point_tracking.core.types.instance_type import PoseInstanceType
+from py3r.pose.core.types import HasImage, Poses
+from py3r.pose.core.types.instance import PoseInstance
+from py3r.pose.core.types.instance_type import PoseInstanceType
 
 
 class PoseModel(ABC):

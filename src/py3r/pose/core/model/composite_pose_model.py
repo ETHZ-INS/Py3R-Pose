@@ -1,8 +1,8 @@
 from typing import List, Any, Iterable
 
-from py3r.point_tracking.core.types.instance import PoseInstance
-from py3r.point_tracking.core.types.instance_type import PoseInstanceType
-from py3r.point_tracking.core.model.pose_model import PoseModel
+from py3r.pose.core.types.instance import PoseInstance
+from py3r.pose.core.types.instance_type import PoseInstanceType
+from py3r.pose.core.model.pose_model import PoseModel
 
 
 class CompositePoseModel(PoseModel):
