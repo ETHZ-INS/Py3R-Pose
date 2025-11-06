@@ -2,8 +2,8 @@ from typing import List
 
 import numpy as np
 
-from py3r.point_tracking.core.data.instance import Instance
-from py3r.point_tracking.core.data.point import Point
+from py3r.point_tracking.core.types.instance import PoseInstance
+from py3r.point_tracking.core.types.point import PosePoint
 from py3r.point_tracking.core.filtering.label_filter import LabelFilter
 
 
@@ -12,10 +12,10 @@ class MedianFilter(LabelFilter):
         self.instance_whitelist = instance_whitelist
         self.replace_missing = replace_missing
 
-    def filter(self, instances: List[Instance]) -> List[Instance]:
+    def filter(self, instances: List[PoseInstance]) -> List[PoseInstance]:
         raise NotImplementedError
 
-    def filter_all(self, frames: List[List[Instance]]) -> List[List[Instance]]:
+    def filter_all(self, frames: List[List[PoseInstance]]) -> List[List[PoseInstance]]:
         unique_instances_set = set()
         unique_instances = []
         for frame in frames:
@@ -53,7 +53,7 @@ class MedianFilter(LabelFilter):
 
             median_box = (float(median_box[0]), float(median_box[1]), float(median_box[2]), float(median_box[3]))
             median_points = [(float(median_points[i][0]), float(median_points[i][1]), float(median_points[i][2])) for i in range(len(median_points))]
-            median_points = [Point(median_points[i][0], median_points[i][1], median_points[i][2]) for i in range(len(median_points))]
+            median_points = [PosePoint(median_points[i][0], median_points[i][1], median_points[i][2]) for i in range(len(median_points))]
 
             for frame in frames:
                 found = False
@@ -65,6 +65,6 @@ class MedianFilter(LabelFilter):
                     instance.conf = median_conf
                     found = True
                 if not found and self.replace_missing:
-                    frame.append(Instance(instance_id, instance_type, median_box, median_points, median_conf))
+                    frame.append(PoseInstance(instance_id, instance_type, median_box, median_points, median_conf))
 
         return frames

@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 
 @dataclass(slots=True)
-class Point:
+class PosePoint:
     x: float
     y: float
     # conf is None for human-annotated points

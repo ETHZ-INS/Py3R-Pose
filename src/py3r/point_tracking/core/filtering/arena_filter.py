@@ -1,6 +1,6 @@
 from typing import List
 
-from py3r.point_tracking.core.data.instance import Instance
+from py3r.point_tracking.core.types.instance import PoseInstance
 from py3r.point_tracking.core.filtering.label_filter import LabelFilter
 
 
@@ -38,7 +38,7 @@ class ArenaFilter(LabelFilter):
 
         return False
 
-    def filter(self, instances: List[Instance]) -> List[Instance]:
+    def filter(self, instances: List[PoseInstance]) -> List[PoseInstance]:
         arena_instances = [
             instance for instance in instances
             if instance.type.name == self.arena_type_name

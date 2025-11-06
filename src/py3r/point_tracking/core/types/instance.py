@@ -1,16 +1,16 @@
 from dataclasses import dataclass
 from typing import List
 
-from py3r.point_tracking.core.data.instance_type import InstanceType
-from py3r.point_tracking.core.data.point import Point
+from py3r.point_tracking.core.types.instance_type import PoseInstanceType
+from py3r.point_tracking.core.types.point import PosePoint
 
 
 @dataclass(slots=True)
-class Instance:
+class PoseInstance:
     id: str
-    type: InstanceType
+    type: PoseInstanceType
     box: tuple[float, float, float, float]
-    points: List[Point]
+    points: List[PosePoint]
     # conf is None for human-annotated instances
     conf: float | None  = None
 

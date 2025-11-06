@@ -1,14 +1,16 @@
+from functools import cached_property
 from typing import Tuple, List, Dict
 
 import cv2
 import numpy as np
 import colorsys
 
-from py3r.point_tracking.core.data.instance import Instance
-from py3r.point_tracking.core.data.instance_type import InstanceType
-from py3r.point_tracking.core.data.point import Point
+from py3r.point_tracking.core.types import HasImage
+from py3r.point_tracking.core.types.instance import PoseInstance
+from py3r.point_tracking.core.types.instance_type import PoseInstanceType
+from py3r.point_tracking.core.types.point import PosePoint
 
-Color = Tuple[int, int, int]
+Color = Tuple[int, int, int] | int
 
 
 def color_from_hue(hue: float) -> Color:
@@ -17,12 +19,9 @@ def color_from_hue(hue: float) -> Color:
 
 
 class PoseRenderer:
-    def __init__(self, instance_types: List[InstanceType] = None, color_map: Dict[Tuple[str, str], Color] = None):
-        self.color_map = {
-            (instance_type.name, point_name): color_from_hue(point_index / len(instance_type.point_names))
-            for instance_type in instance_types
-            for point_index, point_name in enumerate(instance_type.point_names)
-        } if color_map is None else color_map
+    def __init__(self, instance_types: List[PoseInstanceType] = None, color_map: Dict[Tuple[str, str], Color] = None):
+        self._instance_types = instance_types
+        self._color_map = color_map or {}
 
         self.point_radius = 5
 
@@ -43,21 +42,39 @@ class PoseRenderer:
         self.class_name_thickness = 2
         self.class_name_color = (255, 255, 255)
 
-    def set_instance_types(self, instance_types: List[InstanceType]):
-        self.color_map = {
+    @cached_property
+    def color_map(self) -> Dict[Tuple[str, str], Color]:
+        instance_types = self._instance_types or []
+        custom_colors = self._color_map or {}
+        color_map = {
             (instance_type.name, point_name): color_from_hue(point_index / len(instance_type.point_names))
             for instance_type in instance_types
             for point_index, point_name in enumerate(instance_type.point_names)
         }
+        color_map.update(custom_colors)
+        return color_map
+
+    @cached_property
+    def color_map_grayscale(self) -> Dict[Tuple[str, str], int]:
+        return {key: int(0.299 * c[2] + 0.587 * c[1] + 0.114 * c[0]) for key, c in self.color_map.items()}
+
+    def set_instance_types(self, instance_types: List[PoseInstanceType]):
+        self._instance_types = instance_types
+        del self.color_map  # invalidate cached property
+        del self.color_map_grayscale
 
     def set_color_map(self, color_map: Dict[Tuple[str, str], Color]):
-        self.color_map = color_map
+        self._color_map = color_map
+        del self.color_map
+        del self.color_map_grayscale
+
+    def set_point_color(self, instance_type_name: str, point_name: str, color: Color):
+        self._color_map[(instance_type_name, point_name)] = color
+        del self.color_map
+        del self.color_map_grayscale
 
     def set_point_radius(self, radius: int):
         self.point_radius = radius
-
-    def set_point_color(self, instance_type_name: str, point_name: str, color: Color):
-        self.color_map[(instance_type_name, point_name)] = color
 
     def set_show_skeleton(self, show: bool):
         self.show_skeleton = show
@@ -95,22 +112,22 @@ class PoseRenderer:
     def set_class_name_color(self, color: Color):
         self.class_name_color = color
 
-    def draw_point(self, frame: np.ndarray, point: Point, color: Color) -> np.ndarray:
+    def draw_point(self, frame: np.ndarray, point: PosePoint, color: Color) -> np.ndarray:
         p = (int(point.x), int(point.y))
         return cv2.circle(frame, p, self.point_radius, color, -1)
 
-    def draw_skeleton_line(self, frame: np.ndarray, point1: Point, point2: Point) -> np.ndarray:
+    def draw_skeleton_line(self, frame: np.ndarray, point1: PosePoint, point2: PosePoint) -> np.ndarray:
         p1 = (int(point1.x), int(point1.y))
         p2 = (int(point2.x), int(point2.y))
         return cv2.line(frame, p1, p2, self.skeleton_color, self.skeleton_line_width)
 
-    def draw_bounding_box(self, frame: np.ndarray, instance: Instance) -> np.ndarray:
+    def draw_bounding_box(self, frame: np.ndarray, instance: PoseInstance) -> np.ndarray:
         box = instance.box
         p1 = (int(box[0]), int(box[1]))
         p2 = (int(box[2]), int(box[3]))
         return cv2.rectangle(frame, p1, p2, self.bounding_box_color, self.bounding_box_width)
 
-    def draw_class_name(self, frame: np.ndarray, instance: Instance) -> np.ndarray:
+    def draw_class_name(self, frame: np.ndarray, instance: PoseInstance) -> np.ndarray:
         box = instance.box
         if box is None:
             if not any([point is not None for point in instance.points]):
@@ -159,7 +176,21 @@ class PoseRenderer:
 
         return cv2.putText(frame, instance_text, text_p, self.class_name_font, self.class_name_scale, self.class_name_color, self.class_name_thickness)
 
-    def draw_frame(self, frame: np.ndarray, instances: List[Instance]) -> np.ndarray:
+    def render(self, img: HasImage | np.ndarray, instances: List[PoseInstance]) -> np.ndarray:
+        img = img if isinstance(img, np.ndarray) else img.img
+
+        if img.ndim == 3 and img.shape[2] == 1:
+            img = img[:, :, 0]
+            color_map = self.color_map_grayscale
+        elif img.ndim == 2:
+            color_map = self.color_map_grayscale
+        elif img.ndim == 3 and img.shape[2] == 3:
+            color_map = self.color_map
+        else:
+            raise ValueError(f"Unsupported image shape: {img.shape}")
+
+        img = img.copy()
+
         for instance in instances:
             if self.show_skeleton:
                 for line in instance.type.skeleton:
@@ -167,18 +198,18 @@ class PoseRenderer:
                     point2 = instance.points[line[1]]
                     if point1 is None or point2 is None:
                         continue
-                    frame = self.draw_skeleton_line(frame, point1, point2)
+                    img = self.draw_skeleton_line(img, point1, point2)
 
             if self.show_bounding_box:
-                frame = self.draw_bounding_box(frame, instance)
+                img = self.draw_bounding_box(img, instance)
 
-            frame = self.draw_class_name(frame, instance)
+            img = self.draw_class_name(img, instance)
 
             for point_name, point in zip(instance.type.point_names, instance.points):
                 if point is None:
                     continue
-                if (instance.type.name, point_name) not in self.color_map:
+                if (instance.type.name, point_name) not in color_map:
                     continue
-                color = self.color_map[(instance.type.name, point_name)]
-                frame = self.draw_point(frame, point, color)
-        return frame
+                color = color_map[(instance.type.name, point_name)]
+                img = self.draw_point(img, point, color)
+        return img

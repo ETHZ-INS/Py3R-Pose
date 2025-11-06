@@ -2,14 +2,14 @@ import csv
 from pathlib import Path
 from typing import Tuple, List
 
-from py3r.point_tracking.core.data.frame import Frame
-from py3r.point_tracking.core.data.instance_type import InstanceType
-from py3r.point_tracking.core.data.instance import Instance
-from py3r.point_tracking.core.data.point import Point
+from py3r.point_tracking.core.types import VideoFramePoseResults
+from py3r.point_tracking.core.types.instance_type import PoseInstanceType
+from py3r.point_tracking.core.types.instance import PoseInstance
+from py3r.point_tracking.core.types.point import PosePoint
 
 
 class CSVReader:
-    def __init__(self, file_path: Path | str, instance_types: List[InstanceType] = None):
+    def __init__(self, file_path: Path | str, instance_types: List[PoseInstanceType] = None):
         self.file_path = Path(file_path)
 
         # If you don't explicitly pass instance types, they will be inferred from the CSV file
@@ -27,7 +27,7 @@ class CSVReader:
 
         self.columns = self._parse_header()
 
-    def get_instance_types(self) -> List[InstanceType]:
+    def get_instance_types(self) -> List[PoseInstanceType]:
         return list(self.instance_types.values())
 
     def get_instance_ids(self) -> List[str]:
@@ -69,7 +69,7 @@ class CSVReader:
 
             if not self.strict_types:
                 if instance_type_name not in self.instance_types:
-                    self.instance_types[instance_type_name] = InstanceType(instance_type_name, [], [])
+                    self.instance_types[instance_type_name] = PoseInstanceType(instance_type_name, [], [])
 
                 if point_name is not None and point_name not in self.instance_types[instance_type_name].point_names:
                     self.instance_types[instance_type_name].point_names.append(point_name)
@@ -77,7 +77,7 @@ class CSVReader:
             columns.append(("instance", instance_type_name, instance_id, point_name, value_name))
         return columns
 
-    def _parse_instance(self, instance_dict: dict) -> Instance:
+    def _parse_instance(self, instance_dict: dict) -> PoseInstance:
         instance_type_name = instance_dict["type"]
         instance_type = self.instance_types[instance_type_name]
 
@@ -98,9 +98,9 @@ class CSVReader:
             x = float(point_data["x"])
             y = float(point_data["y"])
             conf = float(point_data["conf"])
-            points.append(Point(x, y, conf))
+            points.append(PosePoint(x, y, conf))
 
-        return Instance(
+        return PoseInstance(
             id=instance_dict["id"],
             type=instance_type,
             box=box,
@@ -108,7 +108,7 @@ class CSVReader:
             conf=box_conf
         )
 
-    def read(self) -> Frame | None:
+    def read(self) -> VideoFramePoseResults | None:
         instance_dicts = {}
 
         try:
@@ -178,9 +178,9 @@ class CSVReader:
 
         instances = [self._parse_instance(instance_dict) for instance_dict in instance_dicts]
 
-        return Frame(frame_index, frame_width, frame_height, instances)
+        return VideoFramePoseResults(instances, (frame_width, frame_height), frame_index, 0.0)
 
-    def read_all(self) -> List[Frame]:
+    def read_all(self) -> List[VideoFramePoseResults]:
         frames = []
         while True:
             frame = self.read()
@@ -203,6 +203,6 @@ class CSVReader:
         self.close()
 
     @staticmethod
-    def read_csv(file_path: Path | str) -> List[Frame]:
+    def read_csv(file_path: Path | str) -> List[VideoFramePoseResults]:
         with CSVReader(file_path) as reader:
             return reader.read_all()

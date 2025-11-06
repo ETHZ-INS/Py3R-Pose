@@ -1,6 +1,6 @@
 from typing import List
 
-from py3r.point_tracking.core.data.instance import Instance
+from py3r.point_tracking.core.types.instance import PoseInstance
 from py3r.point_tracking.core.filtering.label_filter import LabelFilter
 
 
@@ -9,14 +9,14 @@ class ConfidenceLabelFilter(LabelFilter):
         self.instance_confidence_threshold = instance_confidence_threshold
         self.point_confidence_threshold = point_confidence_threshold
 
-    def filter_points(self, instance: Instance) -> Instance:
+    def filter_points(self, instance: PoseInstance) -> PoseInstance:
         instance.points = [
             point if point is not None and point.conf >= self.point_confidence_threshold and not(point.x < 0.01 and point.y < 0.01) else None
             for point in instance.points
         ]
         return instance
 
-    def filter(self, instances: List[Instance]) -> List[Instance]:
+    def filter(self, instances: List[PoseInstance]) -> List[PoseInstance]:
         instances = [self.filter_points(instance) for instance in instances]
         # Filter out instances with low confidence and no points
         instances = [

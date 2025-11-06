@@ -1,8 +1,8 @@
 import itertools
 from typing import List
 
-from py3r.point_tracking.core.data.instance_type import InstanceType
-from py3r.point_tracking.core.data.instance import Instance
+from py3r.point_tracking.core.types.instance_type import PoseInstanceType
+from py3r.point_tracking.core.types.instance import PoseInstance
 from py3r.point_tracking.core.filtering.label_filter import LabelFilter
 
 
@@ -12,14 +12,14 @@ class Track:
         self.start_frame = None
         self.last_pose = None
 
-    def update(self, pose: Instance):
+    def update(self, pose: PoseInstance):
         self.last_pose = pose
 
 
 MISSING_POINT_PENALTY = 0.1
 
 
-def pose_distance(pose1: Instance, pose2: Instance) -> float:
+def pose_distance(pose1: PoseInstance, pose2: PoseInstance) -> float:
     instance_1_diag = ((pose1.box[2] - pose1.box[0]) ** 2 + (pose1.box[3] - pose1.box[1]) ** 2) ** 0.5
     instance_2_diag = ((pose2.box[2] - pose2.box[0]) ** 2 + (pose2.box[3] - pose2.box[1]) ** 2) ** 0.5
     scale = (instance_1_diag + instance_2_diag) / 2
@@ -48,8 +48,8 @@ class FixedInstancesTracker(LabelFilter):
     It has the advantage that it smartly filters out false positives by discarding instances
     that did not appear in the previous frame.
     """
-    def __init__(self, instances: List[InstanceType | str]):
-        self.instance_types = [instance_type.name if isinstance(instance_type, InstanceType) else instance_type for instance_type in instances]
+    def __init__(self, instances: List[PoseInstanceType | str]):
+        self.instance_types = [instance_type.name if isinstance(instance_type, PoseInstanceType) else instance_type for instance_type in instances]
 
         self.num_instances_per_type = {instance_type: 0 for instance_type in instances}
         for instance_type in instances:
@@ -62,7 +62,7 @@ class FixedInstancesTracker(LabelFilter):
             track_id = instance_type + f"_{len(self.tracks[instance_type])}"
             self.tracks[instance_type].append(Track(track_id))
 
-    def filter(self, instances: List[Instance]) -> List[Instance]:
+    def filter(self, instances: List[PoseInstance]) -> List[PoseInstance]:
         instances = [instance for instance in instances if any([point is not None for point in instance.points])]
         tracked_instances = []
 
