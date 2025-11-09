@@ -1,4 +1,4 @@
-from typing import List, Any, Iterable
+from typing import List, Any
 
 from py3r.pose.core.types.instance import PoseInstance
 from py3r.pose.core.types.instance_type import PoseInstanceType

@@ -4,7 +4,8 @@ import numpy as np
 import reactivex as rx
 import reactivex.operators as ops
 
-from py3r.pose.core.types import Poses, HasImage
+from py3r.media.types import HasImage
+from py3r.pose.core.types import Poses
 from py3r.pose.core.model.pose_model import PoseModel
 
 
