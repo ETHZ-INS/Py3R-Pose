@@ -1,3 +1,4 @@
+py3r_media @ git+https://github.com/ETHZ-INS/Py3R-Media.git@master
 numpy>=2
 opencv-python>=4
 reactivex>=4.0.0
