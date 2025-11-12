@@ -9,14 +9,13 @@ class JSONWriter:
     def __init__(self, file_path: Path | str):
         self.file_path = Path(file_path)
         self.file = self.file_path.open("w+")
-        self.file.write("[\n")
 
     def write(self, pose_results: VideoFramePoses):
         instance_dicts = [instance.as_dict() for instance in pose_results.instances]
 
         frame_data = {"frame_index": pose_results.frame_index, "frame_size": pose_results.size, "instances": instance_dicts}
         frame_json = json.dumps(frame_data)
-        self.file.write(frame_json + ",\n")
+        self.file.write(frame_json + "\n")
 
     def write_all(self, data: List[VideoFramePoses]):
         for frame in data:
@@ -24,7 +23,6 @@ class JSONWriter:
 
     def close(self):
         if not self.file.closed:
-            self.file.write("null\n]")
             self.file.close()
 
     def __enter__(self):
