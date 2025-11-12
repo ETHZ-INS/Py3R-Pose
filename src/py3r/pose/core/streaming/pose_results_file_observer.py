@@ -1,15 +1,33 @@
 from pathlib import Path
-from concurrent.futures import Future
 from threading import Lock
 
-from reactivex.abc import DisposableBase
+from py3r.pose.core.serialization.dynamic_csv_writer import DynamicPoseCSVWriter
 
-from py3r.pose.core.serialization.dynamic_csv_writer import DynamicCSVWriter
-
+import reactivex as rx
 from reactivex import Observer, Observable
-from reactivex.scheduler import ThreadPoolScheduler
+from reactivex.abc import DisposableBase
+from reactivex.disposable import Disposable
 
 from py3r.pose.core.types import VideoFramePoses
+
+
+class _PoseResultsWriterResource(Disposable):
+    """Owns writer teardown. Idempotent & thread-safe."""
+    def __init__(self, writer: DynamicPoseCSVWriter):
+        super().__init__()
+        self._writer = writer
+        self._closed = False
+        self._lock = Lock()
+
+    def dispose(self) -> None:
+        with self._lock:
+            if self._closed:
+                return
+            self._closed = True
+            try:
+                self._writer.close()
+            except Exception:
+                pass
 
 
 class PoseResultsFileObserver(Observer):
@@ -23,88 +41,27 @@ class PoseResultsFileObserver(Observer):
     - Thread-safe, idempotent cleanup, tolerant of late notifications.
     """
 
-    def __init__(self, target_file: Path, scheduler=None):
+    def __init__(self, target_file: Path):
         super().__init__()
-        self.target_file = Path(target_file)
-        self._worker = scheduler or ThreadPoolScheduler(1)
+        self._target_file = Path(target_file)
+        self._csv_writer = DynamicPoseCSVWriter(self._target_file)
 
-        self.csv_writer = DynamicCSVWriter(self.target_file)
+    def using(self, upstream: rx.Observable[VideoFramePoses]):
+        def resource_factory():
+            # Create the teardown resource now; open in observable_factory so we can
+            # translate open() failures into an observable error.
+            return _PoseResultsWriterResource(self._csv_writer)
 
-        self.result: Future = Future()
+        def observable_factory(_res):
+            return upstream
 
-        self._sub = None
-        self._stopped = False
-        self._lock = Lock()
+        return rx.using(resource_factory, observable_factory)
 
-    # ---------- Observer interface ----------
-    def on_next(self, pose_results):
-        if self._stopped or self.csv_writer is None:
+    def _on_next_core(self, pose_results):
+        if self._csv_writer is None or self._csv_writer.closed:
             return
+
         try:
-            self.csv_writer.write(pose_results)
+            self._csv_writer.write(pose_results)
         except Exception as e:
-            import traceback
-            traceback.print_exc()
-            self._fail(e)
-
-    def on_error(self, err):
-        if self._stopped:
-            return
-        self._fail(err)
-
-    def on_completed(self):
-        if self._stopped:
-            return
-        self._succeed()
-
-    # ---------- Wiring ----------
-    def attach(self, upstream: Observable[VideoFramePoses]) -> DisposableBase:
-        """
-        Subscribe to an Observable and remember the disposable.
-        All callbacks are delivered on `self._worker` (serialized).
-        """
-        self._sub = upstream.subscribe(self)
-        return self._sub
-
-    def dispose(self):
-        """Early stop: unsubscribe, cleanup, and mark as canceled."""
-        self._unsubscribe()
-        self._cleanup_once()
-        with self._lock:
-            if not self.result.done():
-                self.result.cancel()
-
-    # ---------- Internals ----------
-    def _unsubscribe(self):
-        sub = self._sub
-        self._sub = None
-        if sub is not None:
-            try:
-                sub.dispose()
-            except Exception:
-                pass  # best effort
-
-    def _cleanup_once(self):
-        with self._lock:
-            if self._stopped:
-                return
-            self._stopped = True
-            if self.csv_writer is not None:
-                try:
-                    self.csv_writer.close()
-                finally:
-                    self.csv_writer = None
-
-    def _fail(self, exc: Exception):
-        self._unsubscribe()
-        self._cleanup_once()
-        with self._lock:
-            if not self.result.done():
-                self.result.set_exception(exc)
-
-    def _succeed(self):
-        self._unsubscribe()
-        self._cleanup_once()
-        with self._lock:
-            if not self.result.done():
-                self.result.set_result(self.target_file)
+            self.on_error(e)
