@@ -7,7 +7,7 @@ from py3r.pose.core.types import VideoFramePoses
 
 # TODO: rethink all this
 
-class StaticCSVWriter:
+class StaticPoseCSVWriter:
     def __init__(self, file_path: Path | str, columns: List[Tuple[str, str, str, str]]):
         self.file_path = Path(file_path)
         self.columns = columns
@@ -72,5 +72,5 @@ class StaticCSVWriter:
 
     @staticmethod
     def write_csv(file_path: Path | str, columns: List[Tuple[str, str, str, str]], data: List[Tuple[int, List[dict]]]):
-        with StaticCSVWriter(file_path, columns) as writer:
+        with StaticPoseCSVWriter(file_path, columns) as writer:
             writer.write_all(data)

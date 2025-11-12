@@ -15,22 +15,18 @@ class HasPoses(Protocol):
 
 @dataclass(frozen=True, slots=True)
 class Poses(HasPoses):
-    _instances: List[PoseInstance] = field(default_factory=list)
-
-    @property
-    def instances(self) -> List[PoseInstance]:
-        return self._instances
+    instances: List[PoseInstance] = field(default_factory=list)
 
 @dataclass(frozen=True, slots=True)
 class ImagePoses(HasPoses, HasImageMeta):
-    _instances: List[PoseInstance] = field(default_factory=list)
-    _size: Tuple[int, int] = field(default_factory=lambda: (0, 0))
+    instances: List[PoseInstance] = field(default_factory=list)
+    size: Tuple[int, int] = field(default_factory=lambda: (0, 0))
 
     @classmethod
     def from_parts(cls, pose_results: HasPoses, meta: HasImageMeta) -> "ImagePoses":
         return cls(
-            _instances=pose_results.instances,
-            _size=meta.size,
+            instances=pose_results.instances,
+            size=meta.size,
         )
 
     @classmethod
@@ -40,37 +36,29 @@ class ImagePoses(HasPoses, HasImageMeta):
     def with_meta(self, meta: HasImageMeta) -> "ImagePoses":
         return replace(
             self,
-            _size=meta.size,
+            size=meta.size,
         )
 
-    def with_pose_results(self, pose_results: HasPoses) -> "ImagePoses":
+    def with_poses(self, poses: HasPoses) -> "ImagePoses":
         return replace(
             self,
-            _instances=pose_results.instances,
+            instances=poses.instances,
         )
-
-    @property
-    def size(self) -> Tuple[int, int]:
-        return self._size
-
-    @property
-    def instances(self) -> List[PoseInstance]:
-        return self._instances
 
 @dataclass(frozen=True, slots=True)
 class VideoFramePoses(HasPoses, HasFrameMeta):
-    _instances: List[PoseInstance] = field(default_factory=list)
-    _size: Tuple[int, int] = field(default_factory=lambda: (0, 0))
-    _frame_index: int = 0
-    _timestamp: float = 0.0
+    instances: List[PoseInstance] = field(default_factory=list)
+    size: Tuple[int, int] = field(default_factory=lambda: (0, 0))
+    frame_index: int = 0
+    timestamp: float = 0.0
 
     @classmethod
     def from_parts(cls, poses: HasPoses, meta: HasFrameMeta) -> "VideoFramePoses":
         return cls(
-            _instances=poses.instances,
-            _size=meta.size,
-            _frame_index=meta.frame_index,
-            _timestamp=meta.timestamp,
+            instances=poses.instances,
+            size=meta.size,
+            frame_index=meta.frame_index,
+            timestamp=meta.timestamp,
         )
 
     @classmethod
@@ -80,29 +68,13 @@ class VideoFramePoses(HasPoses, HasFrameMeta):
     def with_meta(self, meta: HasFrameMeta) -> "VideoFramePoses":
         return replace(
             self,
-            _size=meta.size,
-            _frame_index=meta.frame_index,
-            _timestamp=meta.timestamp,
+            size=meta.size,
+            frame_index=meta.frame_index,
+            timestamp=meta.timestamp,
         )
 
-    def with_pose_results(self, pose_results: HasPoses) -> "VideoFramePoses":
+    def with_poses(self, poses: HasPoses) -> "VideoFramePoses":
         return replace(
             self,
-            _instances=pose_results.instances,
+            instances=poses.instances,
         )
-
-    @property
-    def size(self) -> Tuple[int, int]:
-        return self._size
-
-    @property
-    def frame_index(self) -> int:
-        return self._frame_index
-
-    @property
-    def timestamp(self) -> float:
-        return self._timestamp
-
-    @property
-    def instances(self) -> List[PoseInstance]:
-        return self._instances

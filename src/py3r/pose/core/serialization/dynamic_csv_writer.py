@@ -4,10 +4,10 @@ from typing import List
 
 from py3r.pose.core.types import VideoFramePoses
 from py3r.pose.core.serialization.json_writer import JSONWriter
-from py3r.pose.core.serialization.static_csv_writer import StaticCSVWriter
+from py3r.pose.core.serialization.static_csv_writer import StaticPoseCSVWriter
 
 
-class DynamicCSVWriter:
+class DynamicPoseCSVWriter:
     def __init__(self, file_path: Path | str, keep_temp_file: bool = False):
         self.file_path = Path(file_path)
         self.temp_file_path = self.file_path.with_suffix(".jsonl")
@@ -25,11 +25,13 @@ class DynamicCSVWriter:
 
     def _finalize(self):
         with self.temp_file_path.open("r") as json_file:
-            frame_dicts = json.load(json_file)[:-1]  # Remove the last empty frame
+            frame_dicts = [json.loads(json_line) for json_line in json_file]
 
         unique_instances = {}
 
         for frame_dict in frame_dicts:
+            if frame_dict is None:
+                continue
             for instance_dict in frame_dict["instances"]:
                 if instance_dict["id"] not in unique_instances:
                     unique_instances[instance_dict["id"]] = instance_dict
@@ -47,7 +49,7 @@ class DynamicCSVWriter:
                 for value_name in ["x", "y", "conf"]:
                     columns.append((instance_type, instance_id, point_name, value_name))
 
-        with StaticCSVWriter(self.file_path, columns) as csv_writer:
+        with StaticPoseCSVWriter(self.file_path, columns) as csv_writer:
             for frame_dict in frame_dicts:
                 frame_index = frame_dict["frame_index"]
                 frame_size = frame_dict["frame_size"]
@@ -71,5 +73,5 @@ class DynamicCSVWriter:
 
     @staticmethod
     def write_csv(file_path: Path | str, data: List[VideoFramePoses]):
-        with DynamicCSVWriter(file_path) as writer:
+        with DynamicPoseCSVWriter(file_path) as writer:
             writer.write_all(data)
