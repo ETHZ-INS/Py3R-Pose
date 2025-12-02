@@ -87,6 +87,7 @@ def observe_on_bounded(scheduler, maxsize=256, policy="block"):
                 wdisp.dispose()
                 upstream.dispose()
                 # unblock worker if waiting
+                # noinspection PyBroadException
                 try: q.put_nowait(lambda: None)
                 except Exception: pass
 

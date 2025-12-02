@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Any, Sequence
+from typing import List, Any, Sequence, Union
 
 import numpy as np
 
@@ -23,7 +23,7 @@ class PoseModel(ABC):
         """
         raise NotImplementedError
 
-    def _predict_batch(self, batch: Sequence[np.ndarray] | Any) -> List[List[PoseInstance]]:
+    def _predict_batch(self, batch: Union[Sequence[np.ndarray], Any]) -> List[List[PoseInstance]]:
         """
         Predict poses for a batch of images.
         :param batch: List of input images (e.g., numpy arrays or tensors).
@@ -39,7 +39,7 @@ class PoseModel(ABC):
             img = img.img
         return Poses(self._predict(img))
 
-    def predict_batch(self, batch: Sequence[HasImage] | Any) -> List[Poses]:
+    def predict_batch(self, batch: Union[Sequence[HasImage], Any]) -> List[Poses]:
         if isinstance(batch, Sequence):
             if len(batch) == 0:
                 return []

@@ -1,4 +1,4 @@
-from typing import Tuple, Callable
+from typing import Tuple, Callable, Union
 
 import numpy as np
 import reactivex as rx
@@ -22,7 +22,7 @@ class PoseRenderTransform:
             raise e
         return Image(vis_img)
 
-    def __call__(self, images: rx.Observable[HasImage | np.ndarray]) -> Callable[[rx.Observable[HasPoses]], rx.Observable[Image]]:
+    def __call__(self, images: rx.Observable[Union[HasImage, np.ndarray]]) -> Callable[[rx.Observable[HasPoses]], rx.Observable[Image]]:
         def inner(poses: rx.Observable) -> rx.Observable:
             imgs = images.pipe(ops.map(lambda x: x if isinstance(x, np.ndarray) else x.img))
             return poses.pipe(

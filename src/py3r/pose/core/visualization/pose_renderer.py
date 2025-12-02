@@ -1,5 +1,5 @@
 from functools import cached_property
-from typing import Tuple, List, Dict
+from typing import Tuple, List, Dict, Union
 
 import cv2
 import numpy as np
@@ -12,7 +12,7 @@ from py3r.pose.core.types.instance import PoseInstance
 from py3r.pose.core.types.instance_type import PoseInstanceType
 from py3r.pose.core.types.point import PosePoint
 
-Color = Tuple[int, int, int] | int
+Color = Union[Tuple[int, int, int], int]
 
 
 def color_from_hue(hue: float) -> Color:
@@ -178,7 +178,7 @@ class PoseRenderer:
 
         return cv2.putText(frame, instance_text, text_p, self.class_name_font, self.class_name_scale, self.class_name_color, self.class_name_thickness)
 
-    def render(self, img: HasImage | np.ndarray, poses: HasPoses | List[PoseInstance]) -> np.ndarray:
+    def render(self, img: Union[HasImage, np.ndarray], poses: Union[HasPoses, List[PoseInstance]]) -> np.ndarray:
         img = img if isinstance(img, np.ndarray) else img.img
         instances = poses if isinstance(poses, list) else poses.instances
 

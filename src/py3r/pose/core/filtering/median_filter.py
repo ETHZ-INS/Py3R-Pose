@@ -17,7 +17,8 @@ class MedianPoseFilter(PoseFilter):
     def _filter(self, instances: List[PoseInstance]) -> List[PoseInstance]:
         raise NotImplementedError
 
-    def _calculate_median_instance(self, instances: List[PoseInstance]) -> PoseInstance:
+    @staticmethod
+    def _calculate_median_instance(instances: List[PoseInstance]) -> PoseInstance:
         boxes = []
         poses = []
         confs = []

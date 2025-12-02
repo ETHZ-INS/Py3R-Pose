@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 
 import numpy as np
 import reactivex as rx
@@ -26,7 +26,7 @@ class PoseEstimationTransform:
         results = poses
         return results
 
-    def __call__(self, upstream: rx.Observable[HasImage | np.ndarray]) -> rx.Observable[Poses]:
+    def __call__(self, upstream: rx.Observable[Union[HasImage, np.ndarray]]) -> rx.Observable[Poses]:
         return upstream.pipe(
             ops.map(lambda x: x if isinstance(x, np.ndarray) else x.img),
             ops.buffer_with_count(self.batch_size),

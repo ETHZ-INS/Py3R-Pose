@@ -4,8 +4,7 @@ from threading import Lock
 from py3r.pose.core.serialization.dynamic_csv_writer import DynamicPoseCSVWriter
 
 import reactivex as rx
-from reactivex import Observer, Observable
-from reactivex.abc import DisposableBase
+from reactivex import Observer
 from reactivex.disposable import Disposable
 
 from py3r.pose.core.types import VideoFramePoses
@@ -24,6 +23,7 @@ class _PoseResultsWriterResource(Disposable):
             if self._closed:
                 return
             self._closed = True
+            # noinspection PyBroadException
             try:
                 self._writer.close()
             except Exception:
