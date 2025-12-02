@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 
 from py3r.pose.core.types import HasPoses, Poses
 from py3r.pose.core.types.instance import PoseInstance
@@ -11,12 +11,12 @@ class PoseFilter:
     def _filter_all(self, instance_lists: List[List[PoseInstance]]) -> List[List[PoseInstance]]:
         return [self._filter(instances) for instances in instance_lists]
 
-    def filter(self, pose_results: HasPoses | List[PoseInstance]) -> Poses:
+    def filter(self, pose_results: Union[HasPoses, List[PoseInstance]]) -> Poses:
         instances = pose_results if isinstance(pose_results, list) else pose_results.instances
         filtered_instances = self._filter(instances)
         return Poses(filtered_instances)
 
-    def filter_all(self, pose_results_list: List[HasPoses] | List[List[PoseInstance]]) -> List[Poses]:
+    def filter_all(self, pose_results_list: Union[List[HasPoses], List[List[PoseInstance]]]) -> List[Poses]:
         if len(pose_results_list) == 0:
             return []
 

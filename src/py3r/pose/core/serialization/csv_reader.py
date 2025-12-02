@@ -1,6 +1,6 @@
 import csv
 from pathlib import Path
-from typing import Tuple, List
+from typing import Tuple, List, Union, Optional
 
 from py3r.pose.core.types import VideoFramePoses
 from py3r.pose.core.types.instance_type import PoseInstanceType
@@ -9,7 +9,7 @@ from py3r.pose.core.types.point import PosePoint
 
 
 class CSVReader:
-    def __init__(self, file_path: Path | str, instance_types: List[PoseInstanceType] = None):
+    def __init__(self, file_path: Union[Path, str], instance_types: List[PoseInstanceType] = None):
         self.file_path = Path(file_path)
 
         # If you don't explicitly pass instance types, they will be inferred from the CSV file
@@ -108,7 +108,7 @@ class CSVReader:
             conf=box_conf
         )
 
-    def read(self) -> VideoFramePoses | None:
+    def read(self) -> Optional[VideoFramePoses]:
         instance_dicts = {}
 
         try:
@@ -203,6 +203,6 @@ class CSVReader:
         self.close()
 
     @staticmethod
-    def read_csv(file_path: Path | str) -> List[VideoFramePoses]:
+    def read_csv(file_path: Union[Path, str]) -> List[VideoFramePoses]:
         with CSVReader(file_path) as reader:
             return reader.read_all()

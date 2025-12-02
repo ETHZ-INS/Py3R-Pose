@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 
 import reactivex as rx
 import reactivex.operators as ops
@@ -19,7 +19,7 @@ class PoseFilterTransform:
     def _filter_all(self, pose_results_list: List[HasPoses]) -> List[Poses]:
         return [self._filter(pr) for pr in pose_results_list]
 
-    def __call__(self, poses: rx.Observable[HasPoses | List[PoseInstance]]) -> rx.Observable[Poses]:
+    def __call__(self, poses: rx.Observable[Union[HasPoses, List[PoseInstance]]]) -> rx.Observable[Poses]:
         if self.filter_all:
             return poses.pipe(
                 ops.map(lambda x: Poses(x) if isinstance(x, list) else x),

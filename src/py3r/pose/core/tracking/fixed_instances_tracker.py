@@ -1,5 +1,5 @@
 import itertools
-from typing import List
+from typing import List, Union
 
 from py3r.pose.core.types.instance_type import PoseInstanceType
 from py3r.pose.core.types.instance import PoseInstance
@@ -48,7 +48,7 @@ class FixedInstancesTracker(PoseFilter):
     It has the advantage that it smartly filters out false positives by discarding instances
     that did not appear in the previous frame.
     """
-    def __init__(self, instances: List[PoseInstanceType | str]):
+    def __init__(self, instances: List[Union[PoseInstanceType, str]]):
         self.instance_types = [instance_type.name if isinstance(instance_type, PoseInstanceType) else instance_type for instance_type in instances]
 
         self.num_instances_per_type = {instance_type: 0 for instance_type in instances}

@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import List
+from typing import List, Union
 
 from py3r.pose.core.types import VideoFramePoses
 from py3r.pose.core.serialization.json_writer import JSONWriter
@@ -8,7 +8,7 @@ from py3r.pose.core.serialization.static_csv_writer import StaticPoseCSVWriter
 
 
 class DynamicPoseCSVWriter:
-    def __init__(self, file_path: Path | str, keep_temp_file: bool = False):
+    def __init__(self, file_path: Union[Path, str], keep_temp_file: bool = False):
         self.file_path = Path(file_path)
         self.temp_file_path = self.file_path.with_suffix(".jsonl")
         self.keep_temp_file = keep_temp_file
@@ -72,6 +72,6 @@ class DynamicPoseCSVWriter:
         self.close()
 
     @staticmethod
-    def write_csv(file_path: Path | str, data: List[VideoFramePoses]):
+    def write_csv(file_path: Union[Path, str], data: List[VideoFramePoses]):
         with DynamicPoseCSVWriter(file_path) as writer:
             writer.write_all(data)

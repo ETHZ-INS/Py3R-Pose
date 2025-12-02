@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
 
 from py3r.pose.core.types.instance_type import PoseInstanceType
 from py3r.pose.core.types.point import PosePoint
@@ -12,7 +12,7 @@ class PoseInstance:
     box: tuple[float, float, float, float]
     points: List[PosePoint]
     # conf is None for human-annotated instances
-    conf: float | None  = None
+    conf: Optional[float] = None
 
     def as_dict(self):
         return {
