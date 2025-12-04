@@ -15,7 +15,7 @@ class PoseModel(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def _predict(self, img: np.ndarray | Any) -> List[PoseInstance]:
+    def _predict(self, img: Union[np.ndarray, Any]) -> List[PoseInstance]:
         """
         Predict poses for a single image.
         :param img: Input image (e.g., numpy array or tensor)
@@ -23,6 +23,7 @@ class PoseModel(ABC):
         """
         raise NotImplementedError
 
+    @abstractmethod
     def _predict_batch(self, batch: Union[Sequence[np.ndarray], Any]) -> List[List[PoseInstance]]:
         """
         Predict poses for a batch of images.
@@ -30,16 +31,14 @@ class PoseModel(ABC):
         May accept batched numpy arrays/tensors depending on implementation.
         :return: List of Instance objects for each image in the batch
         """
-        if not isinstance(batch, Sequence):
-            raise ValueError("For default batch prediction, input must be a sequence of images.")
-        return [self._predict(img) for img in batch]
+        raise NotImplementedError
 
     def predict(self, img: Any) -> Poses:
         if isinstance(img, HasImage):
             img = img.img
         return Poses(self._predict(img))
 
-    def predict_batch(self, batch: Union[Sequence[HasImage], Any]) -> List[Poses]:
+    def predict_batch(self, batch: Union[Sequence[HasImage], Sequence[np.ndarray], Any]) -> List[Poses]:
         if isinstance(batch, Sequence):
             if len(batch) == 0:
                 return []
