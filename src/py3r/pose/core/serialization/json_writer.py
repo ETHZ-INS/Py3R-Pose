@@ -5,7 +5,7 @@ from typing import List, Union
 from py3r.pose.core.types import VideoFramePoses
 
 
-class JSONWriter:
+class PoseJSONWriter:
     def __init__(self, file_path: Union[Path, str]):
         self.file_path = Path(file_path)
         self.file = self.file_path.open("w+")
@@ -36,9 +36,5 @@ class JSONWriter:
 
     @staticmethod
     def write_json(file_path: Union[Path, str], data: List[VideoFramePoses]):
-        frame_dicts = [
-            {"frame_index": frame_index, "instances": [instance.as_dict() for instance in instances]}
-            for frame_index, instances in data
-        ]
-        with Path(file_path).open("w+") as file:
-            json.dump(frame_dicts, file)
+        with PoseJSONWriter(file_path) as writer:
+            writer.write_all(data)
