@@ -8,7 +8,7 @@ from py3r.pose.core.types.instance import PoseInstance
 from py3r.pose.core.types.point import PosePoint
 
 
-class CSVReader:
+class PoseCSVReader:
     def __init__(self, file_path: Union[Path, str], instance_types: List[PoseInstanceType] = None):
         self.file_path = Path(file_path)
 
@@ -204,5 +204,5 @@ class CSVReader:
 
     @staticmethod
     def read_csv(file_path: Union[Path, str]) -> List[VideoFramePoses]:
-        with CSVReader(file_path) as reader:
+        with PoseCSVReader(file_path) as reader:
             return reader.read_all()

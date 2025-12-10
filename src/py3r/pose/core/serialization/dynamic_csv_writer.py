@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import List, Union
 
 from py3r.pose.core.types import VideoFramePoses
-from py3r.pose.core.serialization.json_writer import JSONWriter
+from py3r.pose.core.serialization.json_writer import PoseJSONWriter
 from py3r.pose.core.serialization.static_csv_writer import StaticPoseCSVWriter
 
 
@@ -13,7 +13,7 @@ class DynamicPoseCSVWriter:
         self.temp_file_path = self.file_path.with_suffix(".jsonl")
         self.keep_temp_file = keep_temp_file
 
-        self.json_writer = JSONWriter(self.temp_file_path)
+        self.json_writer = PoseJSONWriter(self.temp_file_path)
         self.closed = False
 
     def write(self, frame: VideoFramePoses):
