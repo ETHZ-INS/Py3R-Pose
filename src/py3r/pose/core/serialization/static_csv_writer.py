@@ -46,7 +46,7 @@ class StaticPoseCSVWriter:
                     value = None
                 else:
                     value = instance["points"][point_name][value_name]
-            row.append(value)
+            row.append(format(value, ".2f") if value is not None else None)
         self.csv_writer.writerow(row)
 
     def write(self, pose_results: VideoFramePoses):
