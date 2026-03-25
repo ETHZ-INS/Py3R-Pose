@@ -1,4 +1,5 @@
 import csv
+import time
 from pathlib import Path
 from typing import Tuple, List, Union, Optional
 
@@ -22,8 +23,8 @@ class PoseCSVReader:
             self.strict_types = False
             self.instance_types = {}
 
-        self.file = self.file_path.open("r")
-        self.csv_reader = csv.reader(self.file)
+        self.file = None
+        self.csv_reader = None
 
         self.columns = self._parse_header()
 
@@ -37,10 +38,12 @@ class PoseCSVReader:
         return self.columns
 
     def _parse_header(self):
-        try:
-            header_row = next(self.csv_reader)
-        except StopIteration:
-            raise ValueError("CSV file is empty")
+        with self.file_path.open("r", newline="") as file:
+            csv_reader = csv.reader(file)
+            try:
+                header_row = next(csv_reader)
+            except StopIteration:
+                raise ValueError("CSV file is empty")
 
         # Create a map of which column corresponds to which instance, point and value
         columns = []
@@ -108,7 +111,12 @@ class PoseCSVReader:
             conf=box_conf
         )
 
-    def read(self) -> Optional[VideoFramePoses]:
+    def open(self):
+        self.file = self.file_path.open("r", newline="")
+        self.csv_reader = csv.reader(self.file)
+        next(self.csv_reader)  # Skip the header row
+
+    def read(self, timeout: Optional[float] = None) -> Optional[VideoFramePoses]:
         instance_dicts = {}
 
         try:
@@ -190,10 +198,12 @@ class PoseCSVReader:
         return frames
 
     def close(self):
-        if not self.file.closed:
+        if self.file:
             self.file.close()
+            self.file = None
 
     def __enter__(self):
+        self.open()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):

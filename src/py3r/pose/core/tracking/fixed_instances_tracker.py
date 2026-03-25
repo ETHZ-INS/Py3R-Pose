@@ -3,7 +3,6 @@ from typing import List, Union
 
 from py3r.pose.core.types.instance_type import PoseInstanceType
 from py3r.pose.core.types.instance import PoseInstance
-from py3r.pose.core.filtering.pose_filter import PoseFilter
 
 
 class Track:
@@ -42,7 +41,7 @@ pose_dists = []
 time_dists = []
 
 
-class FixedInstancesTracker(PoseFilter):
+class FixedInstancesTracker:
     """
     This tracker can be used when you know exactly how many instances of each type there are in the video.
     It has the advantage that it smartly filters out false positives by discarding instances
@@ -51,19 +50,21 @@ class FixedInstancesTracker(PoseFilter):
     def __init__(self, instances: List[Union[PoseInstanceType, str]]):
         self.instance_types = [instance_type.name if isinstance(instance_type, PoseInstanceType) else instance_type for instance_type in instances]
 
-        self.num_instances_per_type = {instance_type: 0 for instance_type in instances}
-        for instance_type in instances:
+        self.num_instances_per_type = {}
+        for instance_type in self.instance_types:
+            if instance_type not in self.num_instances_per_type:
+                self.num_instances_per_type[instance_type] = 0
             self.num_instances_per_type[instance_type] += 1
 
         self.tracks = {}
-        for instance_type in instances:
+        for instance_type in self.instance_types:
             if instance_type not in self.tracks:
                 self.tracks[instance_type] = []
             track_id = instance_type + f"_{len(self.tracks[instance_type])}"
             self.tracks[instance_type].append(Track(track_id))
 
-    def _filter(self, instances: List[PoseInstance]) -> List[PoseInstance]:
-        instances = [instance for instance in instances if any([point is not None for point in instance.points])]
+    def filter(self, pose_results: List[PoseInstance]) -> List[PoseInstance]:
+        instances = [instance for instance in pose_results if any([point is not None for point in instance.points])]
         tracked_instances = []
 
         for instance_type_name, num_instances in self.num_instances_per_type.items():
@@ -116,3 +117,6 @@ class FixedInstancesTracker(PoseFilter):
                     instance.id = track.track_id
                     tracked_instances.append(instance)
         return tracked_instances
+
+    def filter_all(self, pose_results_list: List[List[PoseInstance]]) -> List[List[PoseInstance]]:
+        return [self.filter(instances) for instances in pose_results_list]

@@ -2,10 +2,9 @@ from typing import List, Callable
 
 from py3r.pose.core.types import PoseInstanceType
 from py3r.pose.core.types.instance import PoseInstance
-from py3r.pose.core.filtering.pose_filter import PoseFilter
 
 
-class ArenaPoseFilter(PoseFilter):
+class ArenaPoseFilter:
     def __init__(self, arena_type_filter: Callable[[PoseInstanceType], bool], min_intersection: float = 0.1):
         # Filter out instances that don't overlap with at least one arena instance
         # Used to filter out instances outside the arena, which are probably false positives
@@ -40,7 +39,7 @@ class ArenaPoseFilter(PoseFilter):
 
         return False
 
-    def _filter(self, instances: List[PoseInstance]) -> List[PoseInstance]:
+    def filter(self, instances: List[PoseInstance]) -> List[PoseInstance]:
         arena_instances = [
             instance for instance in instances
             if self.arena_type_filter(instance.type)
@@ -55,3 +54,6 @@ class ArenaPoseFilter(PoseFilter):
                     break
 
         return filtered_instances
+
+    def filter_all(self, instance_lists: List[List[PoseInstance]]) -> List[List[PoseInstance]]:
+        return [self.filter(instances) for instances in instance_lists]

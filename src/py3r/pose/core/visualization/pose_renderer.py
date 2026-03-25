@@ -7,7 +7,6 @@ import colorsys
 
 from py3r.media.types import HasImage
 
-from py3r.pose.core.types import HasPoses
 from py3r.pose.core.types.instance import PoseInstance
 from py3r.pose.core.types.instance_type import PoseInstanceType
 from py3r.pose.core.types.point import PosePoint
@@ -178,10 +177,7 @@ class PoseRenderer:
 
         return cv2.putText(frame, instance_text, text_p, self.class_name_font, self.class_name_scale, self.class_name_color, self.class_name_thickness)
 
-    def render(self, img: Union[HasImage, np.ndarray], poses: Union[HasPoses, List[PoseInstance]]) -> np.ndarray:
-        img = img if isinstance(img, np.ndarray) else img.img
-        instances = poses if isinstance(poses, list) else poses.instances
-
+    def render(self, img: np.ndarray, poses: List[PoseInstance]) -> np.ndarray:
         if img.ndim == 3 and img.shape[2] == 1:
             img = img[:, :, 0]
             color_map = self.color_map_grayscale
@@ -194,7 +190,7 @@ class PoseRenderer:
 
         img = img.copy()
 
-        for instance in instances:
+        for instance in poses:
             if self.show_skeleton:
                 for line in instance.type.skeleton:
                     point1 = instance.points[line[0]]
@@ -212,7 +208,8 @@ class PoseRenderer:
                 if point is None:
                     continue
                 if (instance.type.name, point_name) not in color_map:
-                    continue
-                color = color_map[(instance.type.name, point_name)]
+                    color = (255, 0, 0) if img.ndim == 3 else 255
+                else:
+                    color = color_map[(instance.type.name, point_name)]
                 img = self.draw_point(img, point, color)
         return img
