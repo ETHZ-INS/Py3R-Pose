@@ -6,16 +6,12 @@ import numpy as np
 from py3r.pose.core.types import PoseInstanceType
 from py3r.pose.core.types.instance import PoseInstance
 from py3r.pose.core.types.point import PosePoint
-from py3r.pose.core.filtering.pose_filter import PoseFilter
 
 
-class MedianPoseFilter(PoseFilter):
+class MedianPoseFilter:
     def __init__(self, instance_type_filter: Callable[[PoseInstanceType], bool] = None, replace_missing: bool = True):
         self.instance_type_filter = instance_type_filter
         self.replace_missing = replace_missing
-
-    def _filter(self, instances: List[PoseInstance]) -> List[PoseInstance]:
-        raise NotImplementedError
 
     @staticmethod
     def _calculate_median_instance(instances: List[PoseInstance]) -> PoseInstance:
@@ -46,7 +42,10 @@ class MedianPoseFilter(PoseFilter):
         median_instance = PoseInstance(instances[0].id, instances[0].type, median_box, median_points, median_conf)
         return median_instance
 
-    def _filter_all(self, instance_lists: List[List[PoseInstance]]) -> List[List[PoseInstance]]:
+    def filter(self, instances: List[PoseInstance]) -> List[PoseInstance]:
+        raise NotImplementedError
+
+    def filter_all(self, instance_lists: List[List[PoseInstance]]) -> List[List[PoseInstance]]:
         unique_instances_set = set()
         unique_instances = []
         for frame in instance_lists:

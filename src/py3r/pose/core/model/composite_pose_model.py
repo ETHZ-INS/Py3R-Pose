@@ -15,23 +15,24 @@ class CompositePoseModel(PoseModel):
         # All models must use different class names so instance ids are unique
         # TODO: Is there a way to ensure this?
 
-    def get_instance_types(self) -> List[PoseInstanceType]:
+    @property
+    def instance_types(self) -> List[PoseInstanceType]:
         instance_types = []
         for model in self._models:
-            instance_types.extend(model.get_instance_types())
+            instance_types.extend(model.instance_types)
         return instance_types
 
-    def _predict(self, img: Any) -> List[PoseInstance]:
+    def predict(self, img: Any) -> List[PoseInstance]:
         instances = []
         for model in self._models:
-            instances.extend(model._predict(img))
+            instances.extend(model.predict(img))
         return instances
 
-    def _predict_batch(self, batch: Any) -> List[List[PoseInstance]]:
+    def predict_batch(self, batch: Any) -> List[List[PoseInstance]]:
         instances = [[] for _ in batch]
 
         for model in self._models:
-            model_instances = model._predict_batch(batch)
+            model_instances = model.predict_batch(batch)
             for i, instance_list in enumerate(model_instances):
                 instances[i].extend(instance_list)
 
