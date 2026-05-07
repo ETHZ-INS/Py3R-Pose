@@ -3,12 +3,12 @@ requires = ["setuptools >= 61", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "py3r_pose_core"
-version = "0.5.0"
+name = "py3r_pose"
+version = "0.6.0"
 authors = [
   { name="Marcel Schmutz", email="mschmut@ethz.ch" },
 ]
-description = "Lightweight core library for pose estimation and pose analysis in the ETH Zurich 3R Hub"
+description = "Library for pose estimation and pose analysis in the ETH Zurich 3R Hub"
 readme = "README.md"
 requires-python = ">=3.8"
 license = "MIT"
@@ -20,6 +20,13 @@ dependencies = [
     "reactivex >= 4.0.0",
 ]
 
+[project.optional-dependencies]
+yolo = [
+    "ultralytics >= 8.0.0",
+    "torch>=2",
+    "torchvision>=0.15",
+]
+
 [tool.setuptools.packages.find]
 where = ["src/"]
-include = ["py3r.pose.core*"]
+include = ["py3r.pose.core*", "py3r.pose.yolo*"]
