@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "py3r_pose"
-version = "0.6.0"
+version = "0.7.0"
 authors = [
   { name="Marcel Schmutz", email="mschmut@ethz.ch" },
 ]
@@ -14,10 +14,11 @@ requires-python = ">=3.8"
 license = "MIT"
 license-files = ["LICEN[CS]E*"]
 dependencies = [
-    "py3r_media @ git+https://github.com/ETHZ-INS/Py3R-Media.git@v0.3.1",
+    "py3r_media @ git+https://github.com/ETHZ-INS/Py3R-Media.git@v0.5.0",
     "numpy >= 2",
     "opencv-python >= 4",
     "reactivex >= 4.0.0",
+    "pyyaml >= 6.0",
 ]
 
 [project.optional-dependencies]
@@ -27,6 +28,9 @@ yolo = [
     "torchvision>=0.15",
 ]
 
+[project.scripts]
+py3r_pose = "py3r.pose.cli:main"
+
 [tool.setuptools.packages.find]
 where = ["src/"]
-include = ["py3r.pose.core*", "py3r.pose.yolo*"]
+include = ["py3r.pose.core*", "py3r.pose.yolo*", "py3r.pose.cli*"]
