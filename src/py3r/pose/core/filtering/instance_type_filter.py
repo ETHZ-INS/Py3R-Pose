@@ -10,11 +10,11 @@ class InstanceTypePoseFilter:
         self.instance_types = [t if isinstance(t, str) else t.name for t in instance_types]
         self.whitelist = whitelist
 
-    def filter(self, instances: List[PoseInstance]) -> List[PoseInstance]:
+    def filter(self, instances: List[PoseInstance], context: List[PoseInstance] = []) -> List[PoseInstance]:
         return [
             inst for inst in instances
             if (inst.type.name in self.instance_types) == self.whitelist
         ]
 
-    def filter_all(self, instance_lists: List[List[PoseInstance]]) -> List[List[PoseInstance]]:
+    def filter_all(self, instance_lists: List[List[PoseInstance]], context_lists: List[List[PoseInstance]] = []) -> List[List[PoseInstance]]:
         return [self.filter(instances) for instances in instance_lists]

@@ -13,12 +13,12 @@ class ConfidencePoseFilter:
         instance = PoseInstance(instance.id, instance.type, instance.box, instance.points, instance.conf)
         instance.points = [
             # TODO: conf is currently allowed to be None, meaning human annotated or full confidence, that's a bit weird
-            point if point is not None and point.conf >= self.point_confidence_threshold and not(point.x < 0.01 and point.y < 0.01) else PosePoint(0.0, 0.0, 0.0)
+            point if point is not None and point.conf >= self.point_confidence_threshold and not(point.x < 0.01 and point.y < 0.01) else None
             for point in instance.points
         ]
         return instance
 
-    def filter(self, instances: List[PoseInstance]) -> List[PoseInstance]:
+    def filter(self, instances: List[PoseInstance], context: List[PoseInstance] = []) -> List[PoseInstance]:
         instances = [self._filter_points(instance) for instance in instances]
         # Filter out instances with low confidence and no points
         instances = [
@@ -27,5 +27,5 @@ class ConfidencePoseFilter:
         ]
         return instances
 
-    def filter_all(self, instance_lists: List[List[PoseInstance]]) -> List[List[PoseInstance]]:
+    def filter_all(self, instance_lists: List[List[PoseInstance]], context_lists: List[List[PoseInstance]] = []) -> List[List[PoseInstance]]:
         return [self.filter(instances) for instances in instance_lists]

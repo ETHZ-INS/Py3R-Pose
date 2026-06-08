@@ -205,9 +205,15 @@ def run_track(args):
             job.set_pose_renderer(pose_renderer)
             job.set_tracker(tracker)
 
-            job.set_live_preview(args.live_preview)
+            if args.live_preview:
+                from py3r.pose.cli.image_display import OpenCVImageDisplay
+                job.set_live_preview_display(OpenCVImageDisplay("Live Preview"))
             job.set_quiet(args.quiet)
         else:
+            from py3r.pose.yolo.model.staged_yolo_pose_model import StagedYoloPoseModel
+            from py3r.pose.core.serialization.dynamic_csv_writer import DynamicPoseCSVWriter
+            from py3r.media.video.ffmpeg_video_file_writer import FFmpegVideoFileWriter
+
             models = [build_model(model_identifier) for model_identifier in args.model]
 
             if len(models) == 1:
@@ -217,7 +223,8 @@ def run_track(args):
 
             pose_renderer = build_pose_renderer(args, model.instance_types)
 
-            job = PredictionJob(model)
+            staged_model = StagedYoloPoseModel(model, max_batch=args.batch_size, input_channels=1 if args.grayscale else 3)
+            job = PredictionJob(staged_model)
             job.set_source(source)
 
             if args.original_speed:
@@ -226,8 +233,13 @@ def run_track(args):
             job.set_start_frame(start_frame)
             job.set_end_frame(end_frame)
 
-            job.set_output_file(output_file)
-            job.set_visualization_file(vis_file)
+            if output_file is not None:
+                output_file.parent.mkdir(parents=True, exist_ok=True)
+                job.set_pose_writer(DynamicPoseCSVWriter(output_file))
+
+            if vis_file is not None:
+                vis_file.parent.mkdir(parents=True, exist_ok=True)
+                job.set_video_writer(FFmpegVideoFileWriter(vis_file, size=source.get_size(), fps=source.get_fps(), quality="medium", grayscale=False))
 
             job.set_pose_renderer(pose_renderer)
             job.set_batch_size(args.batch_size)
@@ -235,7 +247,13 @@ def run_track(args):
             #job.set_label_filter(label_filter)
             job.set_tracker(tracker)
 
-            job.set_live_preview(args.live_preview)
+            if args.filter:
+                from py3r.pose.cli.filter_chain_builder import build_sequential_filter
+                job.set_pose_filter(build_sequential_filter(args.filter))
+
+            if args.live_preview:
+                from py3r.pose.cli.image_display import OpenCVImageDisplay
+                job.set_live_preview_display(OpenCVImageDisplay("Live Preview"))
             job.set_no_progress(args.quiet)
 
         if len(input_files) > 1 and not args.quiet:
@@ -346,6 +364,8 @@ def _track_arguments(parser):
 
     parser.add_argument("--render", action="store_true", help="Use existing pose data to create visualization / live preview")
 
+    parser.add_argument("--filter", type=str, default=None, help="Filter chain string (e.g. 'smooth | confidence_threshold[0.5]')")
+
     return parser
 
 
@@ -433,8 +453,6 @@ def main():
         run_concat([Path(input_file) for input_file in args.input_files], args.output_file, args.reset_frame_index)
     elif args.command == "merge":
         run_merge([Path(input_file) for input_file in args.input_files], args.output_file)
-    elif args.command == "stereo_track":
-        run_stereo_track
 
 
 

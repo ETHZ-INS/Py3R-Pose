@@ -34,7 +34,9 @@ def limit_rate(
         ) -> DisposableBase:
             lock = threading.RLock()
             disposed = False
-            next_due = time.monotonic()
+            # Initialised lazily on the first item so that startup delays
+            # (scheduler overhead, skipped frames, etc.) don't build up debt.
+            next_due = None
 
             def dispose_once() -> None:
                 nonlocal disposed
@@ -44,19 +46,18 @@ def limit_rate(
             def on_next(item: T) -> None:
                 nonlocal next_due
 
-                while True:
-                    with lock:
-                        if disposed:
-                            return
+                with lock:
+                    if disposed:
+                        return
+                    # Lazy init: anchor the clock to the first item's arrival
+                    # so any pre-pipeline delay doesn't build up catch-up debt.
+                    if next_due is None:
+                        next_due = time.monotonic() - period
+                    next_due += period
+                    due = next_due  # capture for use outside the lock
 
-                        now = time.monotonic()
-                        wait = next_due - now
-                        if wait <= 0:
-                            # Reserve the next slot before calling downstream.
-                            next_due = max(next_due + period, now + period)
-                            break
-
-                    # Sleep outside the lock so dispose() is not blocked.
+                wait = due - time.monotonic()
+                if wait > 0:
                     time.sleep(wait)
 
                 with lock:

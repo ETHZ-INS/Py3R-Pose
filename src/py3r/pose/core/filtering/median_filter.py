@@ -1,16 +1,14 @@
 from copy import deepcopy
-from typing import List, Callable
+from typing import List
 
 import numpy as np
 
-from py3r.pose.core.types import PoseInstanceType
 from py3r.pose.core.types.instance import PoseInstance
 from py3r.pose.core.types.point import PosePoint
 
 
 class MedianPoseFilter:
-    def __init__(self, instance_type_filter: Callable[[PoseInstanceType], bool] = None, replace_missing: bool = True):
-        self.instance_type_filter = instance_type_filter
+    def __init__(self, replace_missing: bool = True):
         self.replace_missing = replace_missing
 
     @staticmethod
@@ -42,16 +40,14 @@ class MedianPoseFilter:
         median_instance = PoseInstance(instances[0].id, instances[0].type, median_box, median_points, median_conf)
         return median_instance
 
-    def filter(self, instances: List[PoseInstance]) -> List[PoseInstance]:
-        raise NotImplementedError
+    def filter(self, instances: List[PoseInstance], context: List[PoseInstance] = []) -> List[PoseInstance]:
+        raise NotImplementedError("MedianPoseFilter is a post-processing filter; use filter_all() instead")
 
-    def filter_all(self, instance_lists: List[List[PoseInstance]]) -> List[List[PoseInstance]]:
+    def filter_all(self, instance_lists: List[List[PoseInstance]], context_lists: List[List[PoseInstance]] = []) -> List[List[PoseInstance]]:
         unique_instances_set = set()
         unique_instances = []
         for frame in instance_lists:
             for instance in frame:
-                if self.instance_type_filter is not None and not self.instance_type_filter(instance.type):
-                    continue
                 if (instance.type.name, instance.id) in unique_instances_set:
                     continue
                 unique_instances_set.add((instance.type.name, instance.id))
@@ -67,11 +63,11 @@ class MedianPoseFilter:
                 instance
                 for frame in instance_lists
                 for instance in frame
-                if instance.type.name == instance_type and instance.id == instance_id
+                if instance.type.name == instance_type.name and instance.id == instance_id
             ])
 
             for instances, filtered_instances in zip(instance_lists, filtered_instance_lists):
                 if self.replace_missing or any(instance.type.name == instance_type.name and instance.id == instance_id for instance in instances):
                     filtered_instances.append(deepcopy(median_instance))
 
-        return instance_lists
+        return filtered_instance_lists
