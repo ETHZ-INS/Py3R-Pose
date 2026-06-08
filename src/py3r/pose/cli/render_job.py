@@ -3,10 +3,8 @@ from concurrent.futures import Future
 from pathlib import Path
 from typing import List, Optional
 
-import cv2
 from py3r.media.streaming.observables.reader_observable import reader_observable
-from py3r.media.streaming.operators import observe_on_bounded, finally_future, subscribe_on_future
-from py3r.media.streaming.operators.opencv_imshow import opencv_imshow
+from py3r.media.streaming.operators import observe_on_bounded, finally_future
 from py3r.media.streaming.operators.write_to import write_to
 from py3r.media.video import VideoSource
 from py3r.media.video.ffmpeg_video_file_writer import FFmpegVideoFileWriter
@@ -22,6 +20,7 @@ from reactivex import operators as ops, Subject
 from reactivex.disposable import CompositeDisposable
 from reactivex.scheduler import EventLoopScheduler
 
+from py3r.pose.cli.image_display import IImageDisplay, display_image
 from py3r.pose.cli.limit_rate import limit_rate
 from py3r.pose.cli.operators import ensure_3_channel
 from py3r.pose.cli.preview_pace import preview_pace
@@ -42,7 +41,7 @@ class RenderJob:
         self.pose_renderer: Optional[PoseRenderer] = None
         self.tracker: Optional[FixedInstancesTracker] = None
 
-        self.live_preview: bool = False
+        self.live_preview_display: Optional[IImageDisplay] = None
         self.visualization_file: Optional[Path] = None
 
         self.quiet: bool = False
@@ -73,8 +72,8 @@ class RenderJob:
     def set_pose_renderer(self, pose_renderer: PoseRenderer):
         self.pose_renderer = pose_renderer
 
-    def set_live_preview(self, live_preview: bool):
-        self.live_preview = live_preview
+    def set_live_preview_display(self, display: IImageDisplay):
+        self.live_preview_display = display
 
     def set_visualization_file(self, visualization_file: Path):
         self.visualization_file = visualization_file
@@ -180,11 +179,8 @@ class RenderJob:
             ).subscribe(on_error=print)
             subscriptions.add(video_writer_sub)
 
-        if self.live_preview:
+        if self.live_preview_display is not None:
             live_preview_input = visualizations if visualizations is not None else color_frame_images
-
-            pacing_scheduler = EventLoopScheduler()
-            schedulers.add(pacing_scheduler)
 
             display_scheduler = EventLoopScheduler()
             schedulers.add(display_scheduler)
@@ -192,16 +188,12 @@ class RenderJob:
             live_preview_done = Future()
             drains.append(live_preview_done)
 
-            def window_still_open(_):
-                # treat <= 0 (and -1 on some platforms) as closed
-                return cv2.getWindowProperty("Live Preview", cv2.WND_PROP_VISIBLE) > 0.5
-
             live_preview_sub = live_preview_input.pipe(
                 preview_pace(1/30, scheduler=display_scheduler),
-                opencv_imshow("Live Preview", scheduler=display_scheduler),
-                ops.take_while(window_still_open),
+                display_image(self.live_preview_display, scheduler=display_scheduler),
+                ops.take_while(lambda _: self.live_preview_display.is_open()),
                 finally_future(live_preview_done)
-            ).subscribe(on_error=print)
+            ).subscribe(on_error=lambda e: print(f"Error in live preview: {e}"))
             subscriptions.add(live_preview_sub)
 
         progress_done: Optional[Future] = None

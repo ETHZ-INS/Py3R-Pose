@@ -8,12 +8,12 @@ class SequentialPoseFilter:
     def __init__(self, filters: List[IPoseFilter]):
         self.filters = filters
 
-    def filter(self, instances: List[PoseInstance]) -> List[PoseInstance]:
-        for label_filter in self.filters:
-            instances = label_filter.filter(instances)
+    def filter(self, instances: List[PoseInstance], context: List[PoseInstance] = []) -> List[PoseInstance]:
+        for f in self.filters:
+            instances = f.filter(instances)
         return instances
 
-    def filter_all(self, instance_lists: List[List[PoseInstance]]) -> List[List[PoseInstance]]:
-        for label_filter in self.filters:
-            instance_lists = label_filter.filter_all(instance_lists)
+    def filter_all(self, instance_lists: List[List[PoseInstance]], context_lists: List[List[PoseInstance]] = []) -> List[List[PoseInstance]]:
+        for f in self.filters:
+            instance_lists = f.filter_all(instance_lists)
         return instance_lists

@@ -1,17 +1,22 @@
-from typing import List, Callable
+from typing import List, Optional
 
-from py3r.pose.core.types import PoseInstanceType
 from py3r.pose.core.types.instance import PoseInstance
 
 
 class ArenaPoseFilter:
-    def __init__(self, arena_type_filter: Callable[[PoseInstanceType], bool], min_intersection: float = 0.1):
-        # Filter out instances that don't overlap with at least one arena instance
-        # Used to filter out instances outside the arena, which are probably false positives
-        # arena_type_name: Name of the arena type
-        # min_intersection: Minimum intersection required (as fraction of instance box area)
+    """
+    Filters out subject instances that don't overlap with at least one arena instance.
 
-        self.arena_type_filter = arena_type_filter
+    arena_type:       type name used to identify arena instances within the context list
+    min_intersection: minimum required overlap as a fraction of the subject instance's box area
+
+    When used via InstanceScopedFilter with no explicit context selector, the full frame
+    is passed as context automatically, so arena instances will be present without any
+    extra configuration in the filter chain syntax.
+    """
+
+    def __init__(self, arena_type, min_intersection: float = 0.1):
+        self.arena_types: List[str] = [arena_type] if isinstance(arena_type, str) else list(arena_type)
         self.min_intersection = min_intersection
 
     def _bounding_box_overlap(self, instance_box, arena_box):
@@ -33,19 +38,11 @@ class ArenaPoseFilter:
 
         intersection /= instance_area
 
-        # Intersection (as fraction of instance box area) is greater than min_overlap
-        if intersection > self.min_intersection:
-            return True
+        return intersection > self.min_intersection
 
-        return False
+    def filter(self, instances: List[PoseInstance], context: Optional[List[PoseInstance]] = None) -> List[PoseInstance]:
+        arena_instances = [i for i in (context or []) if i.type.name in self.arena_types]
 
-    def filter(self, instances: List[PoseInstance]) -> List[PoseInstance]:
-        arena_instances = [
-            instance for instance in instances
-            if self.arena_type_filter(instance.type)
-        ]
-
-        # Filter out instances that don't overlap with at least one arena instance
         filtered_instances = []
         for instance in instances:
             for arena_instance in arena_instances:
@@ -55,5 +52,7 @@ class ArenaPoseFilter:
 
         return filtered_instances
 
-    def filter_all(self, instance_lists: List[List[PoseInstance]]) -> List[List[PoseInstance]]:
+    def filter_all(self, instance_lists: List[List[PoseInstance]], context_lists: Optional[List[List[PoseInstance]]] = None) -> List[List[PoseInstance]]:
+        if context_lists:
+            return [self.filter(instances, context) for instances, context in zip(instance_lists, context_lists)]
         return [self.filter(instances) for instances in instance_lists]

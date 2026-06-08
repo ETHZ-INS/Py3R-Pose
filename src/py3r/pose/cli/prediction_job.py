@@ -1,18 +1,13 @@
 import time
 from concurrent.futures import Future
-from pathlib import Path
 from typing import List, Optional
 
-import cv2
 from py3r.media.streaming.observables.reader_observable import reader_observable
 from py3r.media.streaming.operators import observe_on_bounded, finally_future, adaptive_pace
-from py3r.media.streaming.operators.opencv_imshow import opencv_imshow
 from py3r.media.streaming.operators.write_to import write_to
 from py3r.media.video import VideoSource
-from py3r.media.video.ffmpeg_video_file_writer import FFmpegVideoFileWriter
 from py3r.pose.core.filtering.abc.pose_filter import IPoseFilter
-from py3r.pose.core.model.pose_model import PoseModel
-from py3r.pose.core.serialization.dynamic_csv_writer import DynamicPoseCSVWriter
+from py3r.pose.core.model.abc.pose_model import IPoseModel
 from py3r.pose.core.streaming.filter_poses import filter_poses
 from py3r.pose.core.streaming.predict_poses import predict_poses
 from py3r.pose.core.streaming.render_poses import render_poses
@@ -20,21 +15,20 @@ from py3r.pose.core.tracking.fixed_instances_tracker import FixedInstancesTracke
 from py3r.pose.core.types import VideoFramePoses
 from py3r.pose.core.visualization.pose_renderer import PoseRenderer
 
-from py3r.pose.yolo.model.staged_yolo_pose_model import StagedYoloPoseModel
 
 import reactivex as rx
 from reactivex import operators as ops, Subject
 from reactivex.disposable import CompositeDisposable
 from reactivex.scheduler import EventLoopScheduler
 
+from py3r.pose.cli.image_display import IImageDisplay, display_image
 from py3r.pose.cli.limit_rate import limit_rate
 from py3r.pose.cli.operators import ensure_3_channel
-from py3r.pose.cli.preview_pace import preview_pace
 from py3r.pose.cli.progress_bar_observer import ProgressBarObserver
 
 
 class PredictionJob:
-    def __init__(self, model: PoseModel):
+    def __init__(self, model: IPoseModel):
         self.pose_model = model
         self.batch_size = 4
 
@@ -49,10 +43,10 @@ class PredictionJob:
         self.pose_renderer: Optional[PoseRenderer] = None
         self.tracker: Optional[FixedInstancesTracker] = None
 
-        self.output_file: Optional[Path] = None
-        self.live_preview: bool = False
-        self.visualization_file: Optional[Path] = None
+        self.pose_writer = None
+        self.video_writer = None
 
+        self.live_preview_display: Optional[IImageDisplay] = None
         self.visualization_length_frames: Optional[int] = None
 
         self.no_progress: bool = False
@@ -83,14 +77,14 @@ class PredictionJob:
     def set_pose_renderer(self, pose_renderer: PoseRenderer):
         self.pose_renderer = pose_renderer
 
-    def set_output_file(self, output_file: Path):
-        self.output_file = output_file
+    def set_pose_writer(self, writer):
+        self.pose_writer = writer
 
-    def set_live_preview(self, live_preview: bool):
-        self.live_preview = live_preview
+    def set_live_preview_display(self, display: IImageDisplay):
+        self.live_preview_display = display
 
-    def set_visualization_file(self, visualization_file: Path):
-        self.visualization_file = visualization_file
+    def set_video_writer(self, writer):
+        self.video_writer = writer
 
     def set_visualization_length_frames(self, visualization_length_frames: Optional[int]):
         self.visualization_length_frames = visualization_length_frames
@@ -108,16 +102,16 @@ class PredictionJob:
         drains: List[Future] = []
 
         main_scheduler = EventLoopScheduler()
-        camera_scheduler = EventLoopScheduler()
         pose_estimation_scheduler = EventLoopScheduler()
+        pose_results_scheduler = EventLoopScheduler()
 
         schedulers.add(main_scheduler)
-        schedulers.add(camera_scheduler)
         schedulers.add(pose_estimation_scheduler)
+        schedulers.add(pose_results_scheduler)
 
         stop = Subject()
 
-        frames = reader_observable(self.source, read_timeout_seconds=30.0).pipe(
+        frames = reader_observable(self.source, read_timeout_seconds=10.0).pipe(
             ops.take_while(lambda x: x is not None),
             ops.skip(self.start_frame)
         )
@@ -140,18 +134,16 @@ class PredictionJob:
             ops.publish()
         )
 
-        frame_images = frames.pipe(ops.map(lambda x: x.img))
-        #frame_images = frame_images.pipe(ops.map(lambda x: cv2.cvtColor(x, cv2.COLOR_BGR2RGB)))
+        frame_images = frames.pipe(ops.map(lambda x: x.img), ops.share())
         if grayscale:
-            color_frame_images = frame_images.pipe(ensure_3_channel)
+            color_frame_images = frame_images.pipe(ensure_3_channel, ops.share())
         else:
             color_frame_images = frame_images
 
-        pose_model = StagedYoloPoseModel(self.pose_model, max_batch=self.batch_size, input_channels=1 if grayscale else 3)
         poses = frame_images.pipe(
             observe_on_bounded(pose_estimation_scheduler, maxsize=30),
-            predict_poses(pose_model, batch_size=self.batch_size),
-            observe_on_bounded(main_scheduler, maxsize=30),
+            predict_poses(self.pose_model, batch_size=self.batch_size),
+            observe_on_bounded(pose_results_scheduler, maxsize=30),
         )
 
         if self.pose_filter is not None:
@@ -162,24 +154,20 @@ class PredictionJob:
 
         poses = poses.pipe(ops.share())
 
-        if self.output_file is not None:
-            self.output_file.parent.mkdir(parents=True, exist_ok=True)
-
+        if self.pose_writer is not None:
             pose_results_done = Future()
             drains.append(pose_results_done)
 
-            pose_results_scheduler = EventLoopScheduler()
-            schedulers.add(pose_results_scheduler)
-
-            pose_results_writer = DynamicPoseCSVWriter(self.output_file)
+            pose_results_writer_scheduler = EventLoopScheduler()
+            schedulers.add(pose_results_writer_scheduler)
 
             pose_results_sub = poses.pipe(
                 ops.zip(frames),
                 ops.map(lambda p: VideoFramePoses.from_pair(p)),
-                observe_on_bounded(pose_results_scheduler, maxsize=30),
+                observe_on_bounded(pose_results_writer_scheduler, maxsize=30),
                 finally_future(pose_results_done),
-                write_to(pose_results_writer)
-            ).subscribe()
+                write_to(self.pose_writer)
+            ).subscribe(on_error=lambda e: print(f"Error writing pose results: {e}"))
             subscriptions.add(pose_results_sub)
 
         frames_poses = rx.zip(color_frame_images, poses)
@@ -197,10 +185,8 @@ class PredictionJob:
 
             visualizations = visualizations.pipe(ops.share())
 
-        if self.visualization_file is not None:
+        if self.video_writer is not None:
             assert visualizations is not None, "Visualizations are required to save a video"
-
-            self.visualization_file.parent.mkdir(parents=True, exist_ok=True)
 
             video_writer_done = Future()
             drains.append(video_writer_done)
@@ -208,25 +194,15 @@ class PredictionJob:
             video_writer_scheduler = EventLoopScheduler()
             schedulers.add(video_writer_scheduler)
 
-            frame_size = self.source.get_size()
-            assert frame_size is not None, "Frame size is not known"
-            fps = self.source.get_fps()
-            assert fps is not None, "FPS is not known"
-
-            video_writer = FFmpegVideoFileWriter(self.visualization_file, size=frame_size, fps=fps, quality="medium", grayscale=False)
-
             video_writer_sub = visualizations.pipe(
                 observe_on_bounded(video_writer_scheduler, maxsize=30),
                 finally_future(video_writer_done),
-                write_to(video_writer)
-            ).subscribe()
+                write_to(self.video_writer)
+            ).subscribe(on_error=lambda e: print(f"Error writing visualization video: {e}"))
             subscriptions.add(video_writer_sub)
 
-        if self.live_preview:
+        if self.live_preview_display is not None:
             live_preview_input = visualizations if visualizations is not None else color_frame_images
-
-            pacing_scheduler = EventLoopScheduler()
-            schedulers.add(pacing_scheduler)
 
             display_scheduler = EventLoopScheduler()
             schedulers.add(display_scheduler)
@@ -234,16 +210,16 @@ class PredictionJob:
             live_preview_done = Future()
             drains.append(live_preview_done)
 
-            def window_still_open(_):
-                # treat <= 0 (and -1 on some platforms) as closed
-                return cv2.getWindowProperty("Live Preview", cv2.WND_PROP_VISIBLE) > 0.5
-
             live_preview_sub = live_preview_input.pipe(
-                preview_pace(1/30, scheduler=display_scheduler),
-                opencv_imshow("Live Preview", scheduler=display_scheduler),
-                ops.take_while(window_still_open),
+                adaptive_pace(window_size=self.batch_size * 4, initial_interval=1/30),
+                ops.sample(1/30, scheduler=display_scheduler),
+                display_image(self.live_preview_display, scheduler=display_scheduler),
+                # TODO: I guess since display_image opens the display async, there is a small chance that the display is not open yet
+                #   when the first frame arrives at ops.take_while, which would cause this path to end immediately.
+                #   Don't know how to prevent that
+                ops.take_while(lambda _: self.live_preview_display.is_open()),
                 finally_future(live_preview_done)
-            ).subscribe()
+            ).subscribe(on_error=lambda e: print(f"Error in live preview: {e}"))
             subscriptions.add(live_preview_sub)
 
         progress_done: Optional[Future] = None
@@ -256,7 +232,7 @@ class PredictionJob:
             progress_subscription = poses.pipe(
                 ops.buffer_with_time(progress_update_interval_seconds),
                 finally_future(progress_done)
-            ).subscribe(progress_bar_observer)
+            ).subscribe(progress_bar_observer, on_error=lambda e: print(f"Error in progress bar: {e}"))
             subscriptions.add(progress_subscription)
 
         try:
