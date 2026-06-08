@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field, replace
-from typing import List, Tuple, runtime_checkable, Protocol, Self
+from typing import List, Tuple, runtime_checkable, Protocol
 
 from py3r.media.types import HasImageMeta, HasFrameMeta
 
@@ -20,23 +20,23 @@ class ImagePoses(HasImageMeta):
     size: Tuple[int, int] = field(default_factory=lambda: (0, 0))
 
     @classmethod
-    def from_parts(cls, poses: List[PoseInstance], meta: HasImageMeta) -> Self:
+    def from_parts(cls, poses: List[PoseInstance], meta: HasImageMeta) -> "ImagePoses":
         return cls(
             instances=poses,
             size=meta.size,
         )
 
     @classmethod
-    def from_pair(cls, pair: Tuple[List[PoseInstance], HasImageMeta]) -> Self:
+    def from_pair(cls, pair: Tuple[List[PoseInstance], HasImageMeta]) -> "ImagePoses":
         return cls.from_parts(*pair)
 
-    def with_meta(self, meta: HasImageMeta) -> Self:
+    def with_meta(self, meta: HasImageMeta) -> "ImagePoses":
         return replace(
             self,
             size=meta.size,
         )
 
-    def with_poses(self, poses: List[PoseInstance]) -> Self:
+    def with_poses(self, poses: List[PoseInstance]) -> "ImagePoses":
         return replace(
             self,
             instances=poses,
@@ -50,7 +50,7 @@ class VideoFramePoses(HasFrameMeta):
     timestamp: float = 0.0
 
     @classmethod
-    def from_parts(cls, poses: List[PoseInstance], meta: HasFrameMeta) -> Self:
+    def from_parts(cls, poses: List[PoseInstance], meta: HasFrameMeta) -> "VideoFramePoses":
         return cls(
             instances=poses,
             size=meta.size,
@@ -59,10 +59,10 @@ class VideoFramePoses(HasFrameMeta):
         )
 
     @classmethod
-    def from_pair(cls, pair: Tuple[List[PoseInstance], HasFrameMeta]) -> Self:
+    def from_pair(cls, pair: Tuple[List[PoseInstance], HasFrameMeta]) -> "VideoFramePoses":
         return cls.from_parts(*pair)
 
-    def with_meta(self, meta: HasFrameMeta) -> Self:
+    def with_meta(self, meta: HasFrameMeta) -> "VideoFramePoses":
         return replace(
             self,
             size=meta.size,
@@ -70,7 +70,7 @@ class VideoFramePoses(HasFrameMeta):
             timestamp=meta.timestamp,
         )
 
-    def with_poses(self, poses: List[PoseInstance]) -> Self:
+    def with_poses(self, poses: List[PoseInstance]) -> "VideoFramePoses":
         return replace(
             self,
             instances=poses,
